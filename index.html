@@ -145,9 +145,8 @@
   }
   .rec{font-size:12px;color:var(--dim);letter-spacing:.04em}
   .runs{
-    margin-left:auto;
     font-size:37px;line-height:1;
-    min-width:2ch;text-align:right;
+    width:46px;text-align:right;flex:none;
     color:var(--fg);
   }
   /* the trailing side steps down the ramp instead of being screened */
@@ -208,6 +207,46 @@
   button:hover{background:var(--fg);color:var(--bg)}
   :focus-visible{outline:2px solid var(--fg);outline-offset:2px}
 
+  /* ---------- R/H/E columns ---------- */
+  /* fixed px widths, not ch, so the 10px header aligns with the 37px figures */
+  .nums{display:flex;align-items:baseline;gap:8px;margin-left:auto}
+  .colhead{display:flex;gap:10px;font-size:10px;color:var(--dim);
+    letter-spacing:.14em;text-transform:uppercase;margin-bottom:2px}
+  .colhead .caret-space{width:7px;flex:none;margin-right:-3px}
+  .colhead .runs,.colhead .hits,.colhead .errors{font-size:10px;color:var(--dim)}
+  .hits,.errors{font-size:15px;color:var(--mid);width:22px;text-align:right;flex:none}
+  .errors{color:var(--dim)}
+
+  /* ---------- detail sheet ---------- */
+  .plate[role=button]{cursor:pointer}
+  .plate[role=button]:hover{border-color:var(--fg)}
+  dialog#detail{
+    border:1px solid var(--fg);background:var(--panel);color:var(--fg);
+    padding:0;width:min(880px,94vw);max-height:88vh;font-family:var(--face);
+  }
+  dialog#detail::backdrop{background:rgba(20,20,20,.86)}
+  .sheet{display:flex;flex-direction:column;max-height:88vh}
+  .sheet-head{display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    padding:16px 18px;border-bottom:1px solid var(--rule)}
+  .sheet-title{font-size:24px;text-transform:uppercase;letter-spacing:-.01em}
+  .sheet-sub{font-size:12px;color:var(--mid);text-transform:uppercase;letter-spacing:.08em}
+  .sheet-close{margin:0 0 0 auto}
+  .sheet-body{overflow:auto;padding:18px;display:flex;flex-direction:column;gap:22px}
+  .sect h3{font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--dim);font-weight:400;margin-bottom:8px}
+  .scroll-x{overflow-x:auto}
+  table.grid,table.lineup{border-collapse:collapse;font-size:12px;width:100%}
+  table.grid td,table.grid th,table.lineup td,table.lineup th{
+    padding:4px 6px;text-align:right;white-space:nowrap;font-weight:400}
+  table.grid th,table.lineup th{color:var(--dim);font-size:10px;
+    letter-spacing:.1em;text-transform:uppercase;border-bottom:1px solid var(--rule)}
+  table.grid td.who,table.grid th.who,table.lineup td.who,table.lineup th.who{text-align:left}
+  table.grid td.tot,table.grid th.tot{color:var(--fg);border-left:1px solid var(--rule)}
+  table.lineup tr.sub td.who{padding-left:20px;color:var(--mid)}
+  table.lineup td.who{max-width:210px;overflow:hidden;text-overflow:ellipsis}
+  table.lineup td.pos{color:var(--dim);text-align:left;width:34px}
+  .sheet-note{font-size:12px;color:var(--mid)}
+
   @media (max-width:520px){
     body{padding:18px 12px 40px}
     .meta{margin-left:0;text-align:left}
@@ -227,6 +266,19 @@
   </header>
   <main id="board" class="board" aria-live="polite"></main>
 </div>
+
+<dialog id="detail" aria-labelledby="sheet-title">
+  <div class="sheet">
+    <div class="sheet-head">
+      <div>
+        <div class="sheet-title" id="sheet-title">&mdash;</div>
+        <div class="sheet-sub" id="sheet-sub"></div>
+      </div>
+      <button class="sheet-close" id="sheet-close">Close</button>
+    </div>
+    <div class="sheet-body" id="sheet-body"></div>
+  </div>
+</dialog>
 
 <script>
 (() => {
@@ -256,10 +308,13 @@
     }).format(d);
   };
 
-  const surname = (full) => {
+  // "Vladimir Guerrero Jr." -> "V. Guerrero Jr."  (keeps suffixes, handles
+  // mononyms by leaving them alone)
+  const shortName = (full) => {
     if (!full) return '';
     const parts = full.trim().split(/\s+/);
-    return parts.length > 1 ? parts.slice(1).join(' ') : full;
+    if (parts.length < 2) return full;
+    return `${parts[0][0]}. ${parts.slice(1).join(' ')}`;
   };
 
   const clockTime = (iso) => {
@@ -314,7 +369,10 @@
         third:  !!ls.offense?.third
       },
       awayRuns: ls.teams?.away?.runs ?? game.teams?.away?.score,
-      homeRuns: ls.teams?.home?.runs ?? game.teams?.home?.score
+      homeRuns: ls.teams?.home?.runs ?? game.teams?.home?.score,
+      awayHits: ls.teams?.away?.hits, homeHits: ls.teams?.home?.hits,
+      awayErrors: ls.teams?.away?.errors, homeErrors: ls.teams?.home?.errors,
+      innings: ls.innings || []
     };
   }
 
@@ -354,7 +412,18 @@
                      (g.state === 'alert' && g.inning != null);
     const battingHome = /bottom/i.test(g.inningState);
 
-    [['away', g.away, g.awayRuns], ['home', g.home, g.homeRuns]].forEach(([side, team, runs]) => {
+    if (showRuns) {
+      const head = el('div', 'colhead');
+      head.append(el('span', 'caret-space'));
+      const hn = el('div', 'nums');
+      hn.append(el('span', 'runs', 'R'), el('span', 'hits', 'H'), el('span', 'errors', 'E'));
+      head.append(hn);
+      lines.append(head);
+    }
+
+    [['away', g.away, g.awayRuns, g.awayHits, g.awayErrors],
+     ['home', g.home, g.homeRuns, g.homeHits, g.homeErrors]]
+    .forEach(([side, team, runs, hits, errors]) => {
       const atBat = g.state === 'live' &&
                     ((side === 'home' && battingHome) || (side === 'away' && !battingHome));
       const line = el('div', 'line' + (atBat ? ' line-atbat' : ''));
@@ -363,7 +432,11 @@
       if (rec && g.state === 'preview') line.append(el('span', 'rec', `${rec.wins}-${rec.losses}`));
       if (showRuns) {
         const leading = runs != null && Math.max(g.awayRuns ?? 0, g.homeRuns ?? 0) === runs;
-        line.append(el('span', 'runs' + (leading ? '' : ' runs-off'), runs ?? 0));
+        const nums = el('div', 'nums');
+        nums.append(el('span', 'runs' + (leading ? '' : ' runs-off'), runs ?? 0));
+        nums.append(el('span', 'hits', hits ?? 0));
+        nums.append(el('span', 'errors', errors ?? 0));
+        line.append(nums);
       }
       lines.append(line);
     });
@@ -396,8 +469,8 @@
       strip.append(sit);
 
       const m = el('div', 'matchup');
-      const pRow = el('div'); pRow.append(el('span','tag','P '), el('span','who', surname(g.pitcher) || '—'));
-      const bRow = el('div'); bRow.append(el('span','tag','AB '), el('span','who', surname(g.batter) || '—'));
+      const pRow = el('div'); pRow.append(el('span','tag','P '), el('span','who', shortName(g.pitcher) || '—'));
+      const bRow = el('div'); bRow.append(el('span','tag','AB '), el('span','who', shortName(g.batter) || '—'));
       m.append(pRow, bRow);
       strip.append(m);
 
@@ -411,7 +484,7 @@
       const m = el('div', 'matchup');
       [['away', g.away], ['home', g.home]].forEach(([, t]) => {
         const row = el('div');
-        row.append(el('span','tag','P '), el('span','who', surname(t.probablePitcher?.fullName) || 'TBD'));
+        row.append(el('span','tag','P '), el('span','who', shortName(t.probablePitcher?.fullName) || 'TBD'));
         m.append(row);
       });
       strip.append(m);
@@ -423,7 +496,164 @@
     }
 
     node.append(strip);
+
+    /* the whole card is the affordance; keyboard reachable, not a nested button */
+    node.tabIndex = 0;
+    node.setAttribute('role', 'button');
+    node.setAttribute('aria-label',
+      `${g.away.team?.name || 'away'} at ${g.home.team?.name || 'home'} — open line score and lineups`);
+    const open = () => openSheet(g);
+    node.addEventListener('click', open);
+    node.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
+    });
+
     return node;
+  }
+
+  // ---------- detail sheet ----------
+  const dlg = document.getElementById('detail');
+  const sheetBody = document.getElementById('sheet-body');
+  let openPk = null;
+  const boxCache = new Map();     // gamePk -> { at, data }
+
+  document.getElementById('sheet-close').addEventListener('click', () => dlg.close());
+  dlg.addEventListener('close', () => { openPk = null; });
+  dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+
+  const boxUrl = pk => USE_PROXY
+    ? `/api/mlb/boxscore?gamePk=${pk}`
+    : `https://statsapi.mlb.com/api/v1/game/${pk}/boxscore`;
+
+  // One request per open card, not per poll — cached just under the refresh
+  // interval so an open sheet still tracks a live game.
+  async function getBox(pk) {
+    const hit = boxCache.get(pk);
+    if (hit && Date.now() - hit.at < 12000) return hit.data;
+    const res = await fetch(boxUrl(pk), { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    boxCache.set(pk, { at: Date.now(), data });
+    return data;
+  }
+
+  function inningGrid(g) {
+    if (!g.innings.length) return el('p', 'sheet-note', 'No innings played yet.');
+    const t = el('table', 'grid');
+    const head = el('tr');
+    head.append(el('th', 'who', ''));
+    g.innings.forEach(i => head.append(el('th', null, i.num)));
+    ['R', 'H', 'E'].forEach(k => head.append(el('th', 'tot', k)));
+    const thead = el('thead'); thead.append(head); t.append(thead);
+
+    const body = el('tbody');
+    [['away', g.away, g.awayRuns, g.awayHits, g.awayErrors],
+     ['home', g.home, g.homeRuns, g.homeHits, g.homeErrors]]
+    .forEach(([side, team, R, H, E]) => {
+      const tr = el('tr');
+      tr.append(el('td', 'who', team.team?.abbreviation || '—'));
+      g.innings.forEach(i => {
+        const v = i[side]?.runs;
+        // X is the traditional mark for a half-inning that was never batted
+        tr.append(el('td', null, v == null ? (g.state === 'final' ? 'X' : '·') : v));
+      });
+      [R, H, E].forEach(v => tr.append(el('td', 'tot', v ?? 0)));
+      body.append(tr);
+    });
+    t.append(body);
+    const wrap = el('div', 'scroll-x'); wrap.append(t);
+    return wrap;
+  }
+
+  // the boxscore keys players as "ID660271"; fall back to a scan just in case
+  const findPlayer = (tb, id) =>
+    tb.players?.['ID' + id] ||
+    Object.values(tb.players || {}).find(pl => pl.person?.id === id);
+
+  function statTable(tb, kind) {
+    const batting = kind === 'batting';
+    const ids = (batting ? tb.batters : tb.pitchers) || [];
+    if (!ids.length) return el('p', 'sheet-note', 'Not announced yet.');
+    const cols = batting ? ['AB','R','H','RBI','BB','K','AVG']
+                         : ['IP','H','R','ER','BB','K','ERA'];
+    const t = el('table', 'lineup');
+    const head = el('tr');
+    head.append(el('th', 'pos', ''), el('th', 'who', batting ? 'Batter' : 'Pitcher'));
+    cols.forEach(c => head.append(el('th', null, c)));
+    const thead = el('thead'); thead.append(head); t.append(thead);
+
+    const body = el('tbody');
+    ids.forEach(id => {
+      const pl = findPlayer(tb, id);
+      if (!pl) return;
+      const st = batting ? (pl.stats?.batting || {}) : (pl.stats?.pitching || {});
+      // battingOrder "300" is a starter, "301" came in for him
+      const starter = batting ? /00$/.test(pl.battingOrder || '00') : true;
+      const tr = el('tr', starter ? null : 'sub');
+      tr.append(el('td', 'pos', pl.position?.abbreviation || ''));
+      tr.append(el('td', 'who',
+        pl.person?.boxscoreName || shortName(pl.person?.fullName) || '—'));
+      const vals = batting
+        ? [st.atBats, st.runs, st.hits, st.rbi, st.baseOnBalls, st.strikeOuts,
+           pl.seasonStats?.batting?.avg]
+        : [st.inningsPitched, st.hits, st.runs, st.earnedRuns, st.baseOnBalls,
+           st.strikeOuts, pl.seasonStats?.pitching?.era];
+      vals.forEach(v => tr.append(el('td', null, v ?? '—')));
+      body.append(tr);
+    });
+    t.append(body);
+    return t;
+  }
+
+  function renderSheet(g, box, err) {
+    const keepScroll = sheetBody.scrollTop;
+
+    document.getElementById('sheet-title').textContent =
+      `${g.away.team?.abbreviation || '—'} @ ${g.home.team?.abbreviation || '—'}`;
+
+    const bits = [];
+    if (g.state === 'live') bits.push(`${g.inningState} ${g.inning}`.trim());
+    else if (g.state === 'final') bits.push(g.isExtras ? `Final / ${g.inning}` : 'Final');
+    else if (g.state === 'alert') bits.push(g.detail);
+    else bits.push(clockTime(g.startsAt));
+    if (g.isDoubleHeader) bits.push(`Game ${g.gameNumber}`);
+    if (g.state !== 'preview') bits.push(`${g.awayRuns ?? 0}\u2013${g.homeRuns ?? 0}`);
+    document.getElementById('sheet-sub').textContent = bits.join('   \u00b7   ');
+
+    sheetBody.innerHTML = '';
+    const ls = el('section', 'sect');
+    ls.append(el('h3', null, 'Line score'), inningGrid(g));
+    sheetBody.append(ls);
+
+    if (err) {
+      sheetBody.append(el('p', 'sheet-note', `Box score unavailable (${err}).`));
+    } else if (!box) {
+      sheetBody.append(el('p', 'sheet-note', 'Loading lineups\u2026'));
+    } else {
+      [['away', g.away], ['home', g.home]].forEach(([side, team]) => {
+        const tb = box.teams?.[side];
+        if (!tb) return;
+        const name = team.team?.name || side;
+        ['batting', 'pitching'].forEach(kind => {
+          const sec = el('section', 'sect');
+          sec.append(el('h3', null, `${name} \u2014 ${kind}`), statTable(tb, kind));
+          sheetBody.append(sec);
+        });
+      });
+    }
+    sheetBody.scrollTop = keepScroll;
+  }
+
+  async function openSheet(g) {
+    openPk = g.pk;
+    renderSheet(g, boxCache.get(g.pk)?.data || null, null);
+    if (!dlg.open) dlg.showModal();
+    try {
+      const box = await getBox(g.pk);
+      if (openPk === g.pk) renderSheet(g, box, null);
+    } catch (e) {
+      if (openPk === g.pk) renderSheet(g, null, e.message);
+    }
   }
 
   // ---------- order the board ----------
@@ -470,6 +700,12 @@
       }).toUpperCase();
     document.getElementById('m-live').textContent = games.filter(g => g.state === 'live').length;
     document.getElementById('m-updated').textContent = 'updated ' + clockTime(new Date().toISOString());
+
+    // an open sheet tracks the same 15s refresh as the board behind it
+    if (openPk) {
+      const fresh = games.find(x => x.pk === openPk);
+      if (fresh) openSheet(fresh);
+    }
 
     board.innerHTML = '';
     if (!games.length) {
