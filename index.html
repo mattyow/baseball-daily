@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Out of Town Scoreboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --enamel:#143A2B;
+    --enamel-lit:#1A4634;
+    --enamel-dark:#0B2318;
+    --seam:#071a11;
+    --bulb:#FFC24A;
+    --bulb-hot:#FFE3A6;
+    --bulb-dim:#5E4A1E;
+    --stencil:#F2EFE4;
+    --stencil-dim:#9DAE9F;
+    --rust:#C4592C;
+    --rust-dim:#5E2E1B;
+    --panel-pad:18px;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+
+  body{
+    background:
+      radial-gradient(ellipse 120% 80% at 50% -10%, var(--enamel-lit) 0%, transparent 60%),
+      var(--enamel-dark);
+    min-height:100vh;
+    color:var(--stencil);
+    font-family:'IBM Plex Mono',ui-monospace,monospace;
+    padding:28px 20px 64px;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .wrap{max-width:1180px;margin:0 auto}
+
+  /* ---------- masthead ---------- */
+  .masthead{
+    display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px 28px;
+    padding-bottom:16px;margin-bottom:22px;
+    border-bottom:2px solid var(--seam);
+  }
+  .mark{
+    font-family:'Saira Condensed',sans-serif;font-weight:800;
+    font-size:clamp(28px,5vw,46px);line-height:.9;letter-spacing:.02em;
+    text-transform:uppercase;
+  }
+  .mark span{color:var(--bulb);text-shadow:0 0 18px rgba(255,194,74,.45)}
+  .meta{
+    display:flex;flex-direction:column;gap:3px;
+    font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--stencil-dim);margin-left:auto;text-align:right;
+  }
+  .meta b{color:var(--stencil);font-weight:600}
+
+  /* ---------- board ---------- */
+  .board{
+    display:grid;gap:12px;
+    grid-template-columns:repeat(auto-fill,minmax(288px,1fr));
+  }
+
+  .plate{
+    position:relative;
+    background:
+      radial-gradient(circle at 1px 1px, rgba(255,255,255,.035) 1px, transparent 1.4px) 0 0/6px 6px,
+      linear-gradient(175deg,var(--enamel-lit),var(--enamel));
+    border:1px solid var(--seam);
+    border-top-color:rgba(255,255,255,.07);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 2px 0 var(--seam);
+    padding:var(--panel-pad);
+    display:flex;flex-direction:column;gap:12px;
+  }
+  /* rivets */
+  .plate::before,.plate::after{
+    content:'';position:absolute;top:7px;width:4px;height:4px;border-radius:50%;
+    background:var(--seam);box-shadow:inset 0 1px 0 rgba(255,255,255,.12);
+  }
+  .plate::before{left:7px}
+  .plate::after{right:7px}
+
+  .plate-alert{border-left:3px solid var(--rust)}
+  .plate-final{opacity:.72}
+
+  /* ---------- eyebrow row ---------- */
+  .eyebrow{display:flex;align-items:center;gap:8px;min-height:20px}
+  .frame{
+    font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:16px;
+    letter-spacing:.08em;text-transform:uppercase;color:var(--bulb);
+    text-shadow:0 0 12px rgba(255,194,74,.4);
+  }
+  .frame-final{color:var(--stencil-dim);text-shadow:none}
+  .frame-alert{color:var(--rust);text-shadow:none}
+
+  .live-dot{
+    width:7px;height:7px;border-radius:50%;background:var(--bulb);flex:none;
+    box-shadow:0 0 8px var(--bulb);
+    animation:pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  @media (prefers-reduced-motion:reduce){.live-dot{animation:none}}
+
+  .chip{
+    font-size:9px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+    padding:3px 6px;border:1px solid currentColor;color:var(--stencil-dim);
+    white-space:nowrap;
+  }
+  .chip-extras{color:var(--bulb)}
+  .chip-dh{color:var(--stencil)}
+  .chip-alert{color:var(--rust);border-color:var(--rust)}
+  .eyebrow .chip:last-child{margin-left:auto}
+
+  /* ---------- line score ---------- */
+  .lines{display:flex;flex-direction:column;gap:2px}
+  .line{display:flex;align-items:baseline;gap:10px}
+  .abbr{
+    font-family:'Saira Condensed',sans-serif;font-weight:700;
+    font-size:27px;letter-spacing:.04em;text-transform:uppercase;
+    color:var(--stencil);
+  }
+  .rec{font-size:10px;color:var(--stencil-dim);letter-spacing:.06em}
+  .runs{
+    margin-left:auto;
+    font-family:'Saira Condensed',sans-serif;font-weight:800;
+    font-size:34px;line-height:1;font-variant-numeric:tabular-nums;
+    color:var(--bulb);text-shadow:0 0 16px rgba(255,194,74,.5);
+  }
+  .runs-off{color:var(--bulb-dim);text-shadow:none}
+  .line-atbat .abbr{color:var(--bulb-hot)}
+
+  /* ---------- footer strip ---------- */
+  .strip{
+    border-top:1px solid var(--seam);padding-top:10px;
+    display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+    font-size:11px;color:var(--stencil-dim);
+  }
+  .situation{display:flex;align-items:center;gap:10px}
+
+  /* bases diamond — the signature */
+  .diamond{position:relative;width:26px;height:26px;flex:none}
+  .bag{
+    position:absolute;width:9px;height:9px;background:var(--bulb-dim);
+    transform:rotate(45deg);border:1px solid var(--seam);
+  }
+  .bag-on{background:var(--bulb);box-shadow:0 0 9px var(--bulb)}
+  .bag-2{top:0;left:8.5px}
+  .bag-1{top:8.5px;right:0}
+  .bag-3{top:8.5px;left:0}
+
+  .outs{display:flex;gap:4px}
+  .out{
+    width:7px;height:7px;border-radius:50%;
+    background:transparent;border:1px solid var(--bulb-dim);
+  }
+  .out-on{background:var(--rust);border-color:var(--rust);box-shadow:0 0 7px rgba(196,89,44,.7)}
+
+  .count{
+    font-weight:600;font-variant-numeric:tabular-nums;color:var(--stencil);
+    letter-spacing:.04em;
+  }
+  .matchup{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .matchup div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .matchup .tag{color:var(--stencil-dim)}
+  .matchup .who{color:var(--stencil)}
+  .reason{color:var(--rust);letter-spacing:.04em}
+  .first-pitch{font-variant-numeric:tabular-nums;letter-spacing:.06em}
+
+  /* ---------- empty / error ---------- */
+  .notice{
+    border:1px dashed var(--seam);padding:34px 24px;text-align:center;
+    color:var(--stencil-dim);font-size:13px;line-height:1.7;
+  }
+  .notice b{
+    display:block;color:var(--stencil);font-family:'Saira Condensed',sans-serif;
+    font-weight:700;font-size:22px;letter-spacing:.06em;text-transform:uppercase;
+    margin-bottom:8px;
+  }
+  .notice-error{border-color:var(--rust-dim);color:var(--rust)}
+  .notice-error b{color:var(--rust)}
+
+  button{
+    margin-top:14px;background:none;border:1px solid currentColor;color:inherit;
+    font-family:inherit;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    padding:8px 14px;cursor:pointer;
+  }
+  button:hover{background:rgba(255,255,255,.06)}
+  :focus-visible{outline:2px solid var(--bulb);outline-offset:2px}
+
+  @media (max-width:520px){
+    body{padding:18px 12px 40px}
+    .meta{margin-left:0;text-align:left}
+    .board{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="masthead">
+    <h1 class="mark">Out of Town<br><span>Scoreboard</span></h1>
+    <div class="meta">
+      <div id="m-date">—</div>
+      <div><b id="m-live">0</b> in progress</div>
+      <div id="m-updated">loading</div>
+    </div>
+  </header>
+  <main id="board" class="board" aria-live="polite"></main>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  // The browser calls the MLB API directly by default. If it gets blocked on
+  // CORS, flip this to true — requests then route through the Netlify function
+  // in netlify/functions/mlb.mjs, which also caches for 10s at the edge.
+  const USE_PROXY = false;
+
+  const DIRECT = 'https://statsapi.mlb.com/api/v1/schedule';
+  const PROXY  = '/api/mlb';
+  const API = USE_PROXY ? PROXY : DIRECT;
+  const REFRESH_MS = 15000;
+  const SKIP_TYPES = ['S','E'];            // spring training + exhibition
+  const board = document.getElementById('board');
+  let timer = null;
+
+  // ---------- helpers ----------
+
+  // The baseball "day" runs on Eastern time, and a 10pm PT game in the 13th is
+  // still today's game at 2am ET. Pull a 2-day window and filter.
+  const etDate = (offsetDays = 0) => {
+    const d = new Date(Date.now() + offsetDays * 864e5);
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit'
+    }).format(d);
+  };
+
+  const surname = (full) => {
+    if (!full) return '';
+    const parts = full.trim().split(/\s+/);
+    return parts.length > 1 ? parts.slice(1).join(' ') : full;
+  };
+
+  const clockTime = (iso) => {
+    if (!iso) return '';
+    return new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  };
+
+  const el = (tag, cls, text) => {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  };
+
+  // ---------- interpret one game ----------
+  function read(game) {
+    const ls      = game.linescore || {};
+    const st      = game.status || {};
+    const coded   = st.codedGameState;
+    const detail  = st.detailedState || '';
+    const abstract= st.abstractGameState;
+
+    // D=delayed  U=suspended  and "Postponed" arrives via detailedState
+    const isAlert = coded === 'D' || coded === 'U' ||
+                    /delay|postpon|suspend/i.test(detail);
+    const isFinal = !isAlert && (abstract === 'Final' || coded === 'F' || coded === 'O');
+    const isLive  = !isAlert && !isFinal && abstract === 'Live';
+
+    const scheduledInnings = ls.scheduledInnings || 9;
+    const inning = ls.currentInning || null;
+
+    return {
+      pk: game.gamePk,
+      away: game.teams?.away || {},
+      home: game.teams?.home || {},
+      startsAt: game.gameDate,
+      // doubleHeader: 'Y' traditional, 'S' split, 'N' none
+      isDoubleHeader: game.doubleHeader === 'Y' || game.doubleHeader === 'S',
+      gameNumber: game.gameNumber || 1,
+      state: isAlert ? 'alert' : isFinal ? 'final' : isLive ? 'live' : 'preview',
+      detail,
+      reason: st.reason || null,
+      inning,
+      inningState: ls.inningState || '',      // Top | Middle | Bottom | End
+      isExtras: !!inning && inning > scheduledInnings,
+      balls: ls.balls, strikes: ls.strikes, outs: ls.outs,
+      pitcher: ls.defense?.pitcher?.fullName,
+      batter: ls.offense?.batter?.fullName,
+      onBase: {
+        first:  !!ls.offense?.first,
+        second: !!ls.offense?.second,
+        third:  !!ls.offense?.third
+      },
+      awayRuns: ls.teams?.away?.runs ?? game.teams?.away?.score,
+      homeRuns: ls.teams?.home?.runs ?? game.teams?.home?.score
+    };
+  }
+
+  // ---------- render one plate ----------
+  function plate(g) {
+    const node = el('article', 'plate plate-' + g.state);
+
+    /* eyebrow: where we are in the game */
+    const eyebrow = el('div', 'eyebrow');
+    if (g.state === 'live') eyebrow.append(el('span', 'live-dot'));
+
+    let frame, frameCls = 'frame';
+    if (g.state === 'live') {
+      const half = /middle|end/i.test(g.inningState) ? g.inningState : g.inningState || '';
+      frame = `${half} ${g.inning ?? ''}`.trim().toUpperCase();
+      if (!frame) frame = 'IN PROGRESS';
+    } else if (g.state === 'final') {
+      // extras get recorded in the final line, the way a box score does it
+      frame = g.isExtras ? `FINAL / ${g.inning}` : 'FINAL';
+      frameCls += ' frame-final';
+    } else if (g.state === 'alert') {
+      frame = g.detail.toUpperCase();
+      frameCls += ' frame-alert';
+    } else {
+      frame = clockTime(g.startsAt);
+    }
+    eyebrow.append(el('span', frameCls, frame));
+
+    if (g.isExtras && g.state === 'live') eyebrow.append(el('span', 'chip chip-extras', 'extras'));
+    if (g.isDoubleHeader) eyebrow.append(el('span', 'chip chip-dh', 'game ' + g.gameNumber));
+    node.append(eyebrow);
+
+    /* the line score itself */
+    const lines = el('div', 'lines');
+    // A postponed game has no score to show — only a delay mid-game does.
+    const showRuns = g.state === 'live' || g.state === 'final' ||
+                     (g.state === 'alert' && g.inning != null);
+    const battingHome = /bottom/i.test(g.inningState);
+
+    [['away', g.away, g.awayRuns], ['home', g.home, g.homeRuns]].forEach(([side, team, runs]) => {
+      const atBat = g.state === 'live' &&
+                    ((side === 'home' && battingHome) || (side === 'away' && !battingHome));
+      const line = el('div', 'line' + (atBat ? ' line-atbat' : ''));
+      line.append(el('span', 'abbr', team.team?.abbreviation || team.team?.name || '—'));
+      const rec = team.leagueRecord;
+      if (rec && g.state === 'preview') line.append(el('span', 'rec', `${rec.wins}-${rec.losses}`));
+      if (showRuns) {
+        const leading = runs != null && Math.max(g.awayRuns ?? 0, g.homeRuns ?? 0) === runs;
+        line.append(el('span', 'runs' + (leading ? '' : ' runs-off'), runs ?? 0));
+      }
+      lines.append(line);
+    });
+    node.append(lines);
+
+    /* bottom strip: situation, or why there isn't one */
+    const strip = el('div', 'strip');
+
+    if (g.state === 'live' && !/middle|end/i.test(g.inningState)) {
+      const sit = el('div', 'situation');
+
+      const dia = el('div', 'diamond');
+      dia.setAttribute('role', 'img');
+      const on = Object.entries(g.onBase).filter(([, v]) => v).map(([k]) => k);
+      dia.setAttribute('aria-label', on.length ? 'Runners on ' + on.join(', ') : 'Bases empty');
+      ['2','1','3'].forEach(n => {
+        const key = { '1':'first', '2':'second', '3':'third' }[n];
+        dia.append(el('div', `bag bag-${n}` + (g.onBase[key] ? ' bag-on' : '')));
+      });
+      sit.append(dia);
+
+      if (g.balls != null && g.strikes != null) {
+        sit.append(el('span', 'count', `${g.balls}-${g.strikes}`));
+      }
+      const outs = el('div', 'outs');
+      outs.setAttribute('role', 'img');
+      outs.setAttribute('aria-label', `${g.outs ?? 0} out`);
+      for (let i = 0; i < 3; i++) outs.append(el('div', 'out' + (i < (g.outs || 0) ? ' out-on' : '')));
+      sit.append(outs);
+      strip.append(sit);
+
+      const m = el('div', 'matchup');
+      const pRow = el('div'); pRow.append(el('span','tag','P '), el('span','who', surname(g.pitcher) || '—'));
+      const bRow = el('div'); bRow.append(el('span','tag','AB '), el('span','who', surname(g.batter) || '—'));
+      m.append(pRow, bRow);
+      strip.append(m);
+
+    } else if (g.state === 'live') {
+      strip.append(el('span', 'count', g.inningState.toUpperCase() + ' — changing sides'));
+
+    } else if (g.state === 'alert') {
+      strip.append(el('span', 'reason', g.reason || g.detail));
+
+    } else if (g.state === 'preview') {
+      const m = el('div', 'matchup');
+      [['away', g.away], ['home', g.home]].forEach(([, t]) => {
+        const row = el('div');
+        row.append(el('span','tag','P '), el('span','who', surname(t.probablePitcher?.fullName) || 'TBD'));
+        m.append(row);
+      });
+      strip.append(m);
+
+    } else {
+      strip.append(el('span', 'count', g.away.isWinner
+        ? `${g.away.team?.abbreviation || 'AWAY'} win`
+        : `${g.home.team?.abbreviation || 'HOME'} win`));
+    }
+
+    node.append(strip);
+    return node;
+  }
+
+  // ---------- order the board ----------
+  const RANK = { live: 0, alert: 1, preview: 2, final: 3 };
+  const order = (a, b) =>
+    RANK[a.state] - RANK[b.state] ||
+    new Date(a.startsAt) - new Date(b.startsAt) ||
+    a.gameNumber - b.gameNumber;
+
+  // ---------- fetch + paint ----------
+  async function refresh() {
+    const today = etDate(0), yesterday = etDate(-1);
+    const url = `${API}?sportId=1&startDate=${yesterday}&endDate=${today}` +
+                `&hydrate=team,linescore,probablePitcher`;
+
+    try {
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+
+      // Keep today's games, plus anything from yesterday still unresolved —
+      // that's the 1am, still-in-the-14th case.
+      const keep = [];
+      (data.dates || []).forEach(d => {
+        (d.games || []).forEach(gm => {
+          if (SKIP_TYPES.includes(gm.gameType)) return;
+          const g = read(gm);
+          const isToday = (gm.officialDate || d.date) === today;
+          if (isToday || g.state === 'live' || g.state === 'alert') keep.push(g);
+        });
+      });
+
+      keep.sort(order);
+      paint(keep, today);
+    } catch (err) {
+      fail(err);
+    }
+  }
+
+  function paint(games, today) {
+    document.getElementById('m-date').textContent =
+      new Date(today + 'T12:00:00').toLocaleDateString([], {
+        weekday: 'short', month: 'short', day: 'numeric'
+      }).toUpperCase();
+    document.getElementById('m-live').textContent = games.filter(g => g.state === 'live').length;
+    document.getElementById('m-updated').textContent = 'updated ' + clockTime(new Date().toISOString());
+
+    board.innerHTML = '';
+    if (!games.length) {
+      const n = el('div', 'notice');
+      n.append(el('b', null, 'Dark today'));
+      n.append(document.createTextNode('No games on the schedule. The board fills in as first pitch approaches.'));
+      board.append(n);
+      return;
+    }
+    games.forEach(g => board.append(plate(g)));
+  }
+
+  function fail(err) {
+    board.innerHTML = '';
+    const n = el('div', 'notice notice-error');
+    n.append(el('b', null, "Can't reach the wire"));
+    n.append(document.createTextNode(
+      `The MLB Stats API didn't answer (${err.message}). It retries every 15 seconds on its own.`
+    ));
+    const btn = el('button', null, 'Retry now');
+    btn.addEventListener('click', refresh);
+    n.append(btn);
+    board.append(n);
+    document.getElementById('m-updated').textContent = 'stalled';
+  }
+
+  // ---------- lifecycle: don't poll a tab nobody's looking at ----------
+  function start() {
+    stop();
+    refresh();
+    timer = setInterval(refresh, REFRESH_MS);
+  }
+  function stop() { if (timer) clearInterval(timer), timer = null; }
+
+  document.addEventListener('visibilitychange', () =>
+    document.hidden ? stop() : start()
+  );
+  start();
+})();
+</script>
+</body>
+</html>
