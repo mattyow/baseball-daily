@@ -129,6 +129,17 @@
   /* ---------- line score ---------- */
   .lines{display:flex;flex-direction:column;gap:2px}
   .line{display:flex;align-items:baseline;gap:10px}
+  /* At-bat cue. The box is present on every row and only takes colour on the
+     batting one, so nothing shifts horizontally when it moves. */
+  .line::before{
+    content:'';flex:none;align-self:center;
+    width:0;height:0;margin-right:-3px;
+    position:relative;top:2px;   /* measured: centres it on cap height, not the line box */
+    border-top:5px solid transparent;
+    border-bottom:5px solid transparent;
+    border-left:7px solid transparent;
+  }
+  .line-atbat::before{border-left-color:var(--fg)}
   .abbr{
     font-size:28px;letter-spacing:-.01em;text-transform:uppercase;color:var(--fg);
   }
@@ -141,10 +152,7 @@
   }
   /* the trailing side steps down the ramp instead of being screened */
   .runs-off{color:var(--dim)}
-  .line-atbat .abbr{
-    text-decoration:underline;text-underline-offset:3px;
-    text-decoration-thickness:2px;
-  }
+
 
   /* ---------- footer strip ---------- */
   .strip{
@@ -154,16 +162,19 @@
   }
   .situation{display:flex;align-items:center;gap:10px}
 
-  .diamond{position:relative;width:28px;height:28px;flex:none}
+  /* 32px field, 8px bags, centres 10px out. At 28/9 the rotated corners of
+     second and third actually overlapped, which read as one blob. Offsets are
+     border-box: (32-8)/2 = 12 centres the cross axis, 12-10 = 2 sets the radius. */
+  .diamond{position:relative;width:32px;height:32px;flex:none}
   .bag{
-    position:absolute;width:9px;height:9px;
+    position:absolute;width:8px;height:8px;
     background:transparent;border:1px solid var(--rule);
     transform:rotate(45deg);
   }
   .bag-on{background:var(--fg);border-color:var(--fg)}
-  .bag-2{top:2.5px;left:8.5px}
-  .bag-1{top:8.5px;right:2.5px}
-  .bag-3{top:8.5px;left:2.5px}
+  .bag-2{top:2px;left:12px}
+  .bag-1{top:12px;right:2px}
+  .bag-3{top:12px;left:2px}
 
   .outs{display:flex;gap:4px}
   .out{width:7px;height:7px;background:transparent;border:1px solid var(--rule)}
