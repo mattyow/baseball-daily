@@ -15,23 +15,22 @@
     font-display:swap;
   }
   :root{
-    /* Two inks and nothing else. Every midtone on this board is a dither
-       pattern of the two, the way a 1-bit display had to do it. */
-    --ink:#0A0A0A;
-    --paper:#EDEDED;
-    --tone-a:#9A9A9A;   /* secondary text — solid, because dithered type
-                           under about 30px stops being readable */
-    --tone-b:#7A7A7A;   /* tertiary text — 4.6:1 on ink, still AA at 12px */
-    --line:#5E5E5E;     /* hairlines and unlit fixtures; 3:1 is the bar for
-                           structure rather than text */
+    /* A five-step grey ramp. Every text value is >=4.5:1 against the panel it
+       sits on; --rule clears 3:1, which is the bar for structure not type. */
+    --bg:#262626;      /* page, and the surface finished games recede to */
+    --panel:#353535;   /* live panel, one step up from the page */
+    --rule:#7E7E7E;    /* hairlines, unlit bases and outs */
+    --dim:#9D9D9D;     /* records, field labels        4.5:1 on panel */
+    --mid:#BDBDBD;     /* secondary text, reasons      6.5:1 on panel */
+    --fg:#E8E8E8;      /* scores, team codes          10.0:1 on panel */
 
-    /* ordered dither patterns, paper pixels over the ink ground */
-    --d12:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='1' height='1' fill='%23EDEDED'/%3E%3Crect x='2' y='2' width='1' height='1' fill='%23EDEDED'/%3E%3C/svg%3E");
-    --d50:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='2' height='2'%3E%3Crect width='1' height='1' fill='%23EDEDED'/%3E%3Crect x='1' y='1' width='1' height='1' fill='%23EDEDED'/%3E%3C/svg%3E");
-    --hatch:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Cpath d='M-1 3L3 -1M1 5L5 1' stroke='%23EDEDED' stroke-width='1'/%3E%3C/svg%3E");
+    /* Dither lives in the negative space between panels, never behind text —
+       that was what made the last pass unreadable. */
+    --dither:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='1' height='1' fill='%234A4A4A'/%3E%3Crect x='2' y='2' width='1' height='1' fill='%234A4A4A'/%3E%3C/svg%3E");
+    /* the two places a pattern still earns its keep */
+    --hatch:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Cpath d='M-1 3L3 -1M1 5L5 1' stroke='%23BDBDBD' stroke-width='1'/%3E%3C/svg%3E");
+    --screen:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='2' height='2'%3E%3Crect width='1' height='1' fill='%23BDBDBD'/%3E%3Crect x='1' y='1' width='1' height='1' fill='%23BDBDBD'/%3E%3C/svg%3E");
 
-    /* Ghost Byte ships one weight, so hierarchy comes from size, letterspacing
-       and screening — never font-weight, which the browser would fake. */
     --face:'Ghost Byte', ui-sans-serif, system-ui, sans-serif;
     --panel-pad:18px;
   }
@@ -39,9 +38,10 @@
   *{box-sizing:border-box;margin:0;padding:0}
 
   body{
-    background:var(--ink);
+    background-color:var(--bg);
+    background-image:var(--dither);
     min-height:100vh;
-    color:var(--paper);
+    color:var(--fg);
     font-family:var(--face);
     font-weight:400;
     font-variant-numeric:tabular-nums lining-nums;
@@ -57,28 +57,27 @@
   .masthead{
     display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px 28px;
     padding-bottom:14px;margin-bottom:22px;
-    border-bottom:1px solid var(--paper);
-    box-shadow:0 3px 0 -2px var(--paper);   /* double rule */
+    border-bottom:1px solid var(--rule);
+    box-shadow:0 3px 0 -2px var(--rule);   /* double rule */
   }
   .mark{
     font-size:clamp(26px,4.6vw,42px);line-height:.94;letter-spacing:-.005em;
-    text-transform:uppercase;color:var(--paper);
+    text-transform:uppercase;color:var(--fg);
   }
-  /* Screened type: the glyph is a window onto a dither pattern. Only at sizes
-     where the pattern still resolves. */
-  .mark span,.runs-off{
-    color:transparent;background-image:var(--d50);
+  /* the wordmark is the one screened thing left — 42px, and carries no data */
+  .mark span{
+    color:transparent;background-image:var(--screen);
     -webkit-background-clip:text;background-clip:text;
   }
   @supports not ((background-clip:text) or (-webkit-background-clip:text)){
-    .mark span,.runs-off{color:var(--tone-b);background-image:none}
+    .mark span{color:var(--mid);background-image:none}
   }
   .meta{
     display:flex;flex-direction:column;gap:3px;
     font-size:12px;letter-spacing:.08em;text-transform:uppercase;
-    color:var(--tone-a);margin-left:auto;text-align:right;
+    color:var(--mid);margin-left:auto;text-align:right;
   }
-  .meta b{color:var(--paper)}
+  .meta b{color:var(--fg)}
 
   /* ---------- board ---------- */
   .board{
@@ -88,17 +87,14 @@
 
   .plate{
     position:relative;
-    background-color:var(--ink);
-    background-image:var(--d12);
-    border:1px solid var(--line);
+    background:var(--panel);        /* solid. text needs a clean ground. */
+    border:1px solid var(--rule);
     padding:var(--panel-pad);
     display:flex;flex-direction:column;gap:12px;
   }
-  /* liveness reads as a brighter enclosure rather than a colour */
-  .plate-live{border-color:var(--paper)}
-  .plate-final{background-image:none}
+  .plate-live{border-color:var(--fg)}
+  .plate-final{background:var(--bg)}   /* settled games sink to page level */
 
-  /* delays get a hatched margin — the one texture that isn't a flat screen */
   .plate-alert{padding-left:calc(var(--panel-pad) + 8px)}
   .plate-alert::before{
     content:'';position:absolute;left:0;top:0;bottom:0;width:5px;
@@ -108,15 +104,13 @@
   /* ---------- eyebrow row ---------- */
   .eyebrow{display:flex;align-items:center;gap:8px;min-height:20px}
   .frame{
-    font-size:15px;letter-spacing:.03em;text-transform:uppercase;
-    color:var(--paper);
+    font-size:15px;letter-spacing:.03em;text-transform:uppercase;color:var(--fg);
   }
-  .frame-final{color:var(--tone-b)}
-  /* inversion was how a 1-bit interface shouted */
-  .frame-alert{background:var(--paper);color:var(--ink);padding:1px 5px}
+  .frame-final{color:var(--dim)}
+  .frame-alert{background:var(--fg);color:var(--bg);padding:1px 5px}
 
   .live-dot{
-    width:7px;height:7px;background:var(--paper);flex:none;
+    width:7px;height:7px;background:var(--fg);flex:none;
     animation:blink 1.6s steps(1,end) infinite;
   }
   @keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
@@ -124,29 +118,29 @@
 
   .chip{
     font-size:11px;letter-spacing:.09em;text-transform:uppercase;
-    padding:3px 6px;border:1px solid var(--tone-a);color:var(--tone-a);
+    padding:3px 6px;border:1px solid var(--rule);color:var(--mid);
     white-space:nowrap;
   }
-  .chip-extras{background:var(--paper);color:var(--ink);border-color:var(--paper)}
-  .chip-dh{color:var(--paper);border-color:var(--paper)}
-  .chip-alert{background:var(--hatch);color:var(--paper);border-color:var(--paper)}
+  .chip-extras{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+  .chip-dh{color:var(--fg)}
+  .chip-alert{background:var(--hatch);color:var(--fg);border-color:var(--fg)}
   .eyebrow .chip:last-child{margin-left:auto}
 
   /* ---------- line score ---------- */
   .lines{display:flex;flex-direction:column;gap:2px}
   .line{display:flex;align-items:baseline;gap:10px}
   .abbr{
-    font-size:28px;letter-spacing:-.01em;text-transform:uppercase;
-    color:var(--paper);
+    font-size:28px;letter-spacing:-.01em;text-transform:uppercase;color:var(--fg);
   }
-  .rec{font-size:12px;color:var(--tone-b);letter-spacing:.04em}
+  .rec{font-size:12px;color:var(--dim);letter-spacing:.04em}
   .runs{
     margin-left:auto;
     font-size:37px;line-height:1;
     min-width:2ch;text-align:right;
-    color:var(--paper);
+    color:var(--fg);
   }
-  /* batting side is marked by rule, not by brightness */
+  /* the trailing side steps down the ramp instead of being screened */
+  .runs-off{color:var(--dim)}
   .line-atbat .abbr{
     text-decoration:underline;text-underline-offset:3px;
     text-decoration-thickness:2px;
@@ -154,55 +148,54 @@
 
   /* ---------- footer strip ---------- */
   .strip{
-    border-top:1px solid var(--line);padding-top:10px;
+    border-top:1px solid var(--rule);padding-top:10px;
     display:flex;align-items:center;gap:12px;flex-wrap:wrap;
-    font-size:12px;color:var(--tone-a);
+    font-size:12px;color:var(--mid);
   }
   .situation{display:flex;align-items:center;gap:10px}
 
   .diamond{position:relative;width:28px;height:28px;flex:none}
   .bag{
     position:absolute;width:9px;height:9px;
-    background:transparent;border:1px solid var(--line);
+    background:transparent;border:1px solid var(--rule);
     transform:rotate(45deg);
   }
-  .bag-on{background:var(--paper);border-color:var(--paper)}
+  .bag-on{background:var(--fg);border-color:var(--fg)}
   .bag-2{top:2.5px;left:8.5px}
   .bag-1{top:8.5px;right:2.5px}
   .bag-3{top:8.5px;left:2.5px}
 
   .outs{display:flex;gap:4px}
-  .out{width:7px;height:7px;background:transparent;border:1px solid var(--line)}
-  .out-on{background:var(--paper);border-color:var(--paper)}
+  .out{width:7px;height:7px;background:transparent;border:1px solid var(--rule)}
+  .out-on{background:var(--fg);border-color:var(--fg)}
 
-  .count{color:var(--paper);letter-spacing:.02em}
+  .count{color:var(--fg);letter-spacing:.02em}
   .matchup{display:flex;flex-direction:column;gap:2px;min-width:0}
   .matchup div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .matchup .tag{color:var(--tone-b)}
-  .matchup .who{color:var(--paper)}
-  .reason{color:var(--paper);letter-spacing:.04em}
+  .matchup .tag{color:var(--dim)}
+  .matchup .who{color:var(--fg)}
+  .reason{color:var(--mid);letter-spacing:.04em}
   .first-pitch{letter-spacing:.04em}
 
   /* ---------- empty / error ---------- */
   .notice{
-    border:1px solid var(--line);padding:34px 24px;text-align:center;
-    color:var(--tone-a);font-size:13px;line-height:1.7;
+    border:1px solid var(--rule);padding:34px 24px;text-align:center;
+    color:var(--mid);font-size:13px;line-height:1.7;
   }
   .notice b{
-    display:inline-block;background:var(--paper);color:var(--ink);
+    display:inline-block;background:var(--fg);color:var(--bg);
     font-size:23px;letter-spacing:.01em;text-transform:uppercase;
     padding:1px 8px;margin-bottom:10px;
   }
-  .notice-error{border-color:var(--paper)}
+  .notice-error{border-color:var(--fg)}
 
   button{
-    margin-top:14px;background:var(--ink);border:1px solid var(--paper);
-    color:var(--paper);
+    margin-top:14px;background:var(--bg);border:1px solid var(--fg);color:var(--fg);
     font-family:inherit;font-size:12px;letter-spacing:.09em;text-transform:uppercase;
     padding:8px 14px;cursor:pointer;
   }
-  button:hover{background:var(--paper);color:var(--ink)}
-  :focus-visible{outline:2px solid var(--paper);outline-offset:2px}
+  button:hover{background:var(--fg);color:var(--bg)}
+  :focus-visible{outline:2px solid var(--fg);outline-offset:2px}
 
   @media (max-width:520px){
     body{padding:18px 12px 40px}
