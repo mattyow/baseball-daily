@@ -32,6 +32,10 @@
     --screen:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='2' height='2'%3E%3Crect width='1' height='1' fill='%23BDBDBD'/%3E%3Crect x='1' y='1' width='1' height='1' fill='%23BDBDBD'/%3E%3C/svg%3E");
 
     --face:'Ghost Byte', ui-sans-serif, system-ui, sans-serif;
+    /* font-feature-settings replaces wholesale rather than accumulating, so the
+       base set lives here and anything needing 'case' composes on top of it.
+       ss01 = alternate capital I, ss04 = alternate bullet. */
+    --otf:'ss01' 1, 'ss04' 1;
     --panel-pad:18px;
   }
 
@@ -45,10 +49,11 @@
     font-family:var(--face);
     font-weight:400;
     font-variant-numeric:tabular-nums lining-nums;
+    font-feature-settings:var(--otf);
     padding:28px 20px 64px;
   }
 
-  .mark,.frame,.abbr,.notice b{font-feature-settings:'case' 1}
+  .mark,.frame,.abbr,.notice b{font-feature-settings:var(--otf), 'case' 1}
   .meta,.chip,.rec,.matchup .tag,button{font-variant-caps:all-small-caps}
 
   .wrap{max-width:1180px;margin:0 auto}
@@ -223,6 +228,9 @@
   dialog#detail{
     border:1px solid var(--fg);background:var(--panel);color:var(--fg);
     padding:0;width:min(880px,94vw);max-height:88vh;font-family:var(--face);
+    /* the *{margin:0} reset kills the UA sheet's dialog:modal{margin:auto},
+       which is what centres a modal — put it back explicitly */
+    inset:0;margin:auto;
   }
   dialog#detail::backdrop{background:rgba(20,20,20,.86)}
   .sheet{display:flex;flex-direction:column;max-height:88vh}
@@ -618,7 +626,8 @@
     else bits.push(clockTime(g.startsAt));
     if (g.isDoubleHeader) bits.push(`Game ${g.gameNumber}`);
     if (g.state !== 'preview') bits.push(`${g.awayRuns ?? 0}\u2013${g.homeRuns ?? 0}`);
-    document.getElementById('sheet-sub').textContent = bits.join('   \u00b7   ');
+    // U+2022, so the ss04 alternate bullet is actually exercised
+    document.getElementById('sheet-sub').textContent = bits.join('   \u2022   ');
 
     sheetBody.innerHTML = '';
     const ls = el('section', 'sect');
