@@ -4,11 +4,23 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Out of Town Scoreboard</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="preload" href="fonts/GhostByte-Regular.woff2" as="font" type="font/woff2" crossorigin>
 <style>
+  @font-face{
+    font-family:'Ghost Byte';
+    src:url('fonts/GhostByte-Regular.woff2') format('woff2'),
+        url('fonts/GhostByte-Regular.woff') format('woff');
+    font-weight:400;          /* the only weight there is — see note below */
+    font-style:normal;
+    font-display:swap;
+  }
+
   :root{
+    /* Ghost Byte ships one weight, so hierarchy on this board comes from size,
+       letterspacing and the bulb glow — never font-weight. Setting a bold
+       anywhere makes the browser fake it and smear the outlines. */
+    --face:'Ghost Byte', ui-sans-serif, system-ui, sans-serif;
+
     --enamel:#143A2B;
     --enamel-lit:#1A4634;
     --enamel-dark:#0B2318;
@@ -31,10 +43,20 @@
       var(--enamel-dark);
     min-height:100vh;
     color:var(--stencil);
-    font-family:'IBM Plex Mono',ui-monospace,monospace;
+    font-family:var(--face);
+    font-weight:400;
+    /* every figure on the board is a column that changes — keep them aligned */
+    font-variant-numeric:tabular-nums lining-nums;
     padding:28px 20px 64px;
     -webkit-font-smoothing:antialiased;
   }
+
+  /* 'case' lifts colons, slashes and dashes to cap height in all-caps strings
+     like FINAL / 11 and DELAYED: RAIN */
+  .mark,.frame,.abbr,.notice b{font-feature-settings:'case' 1}
+
+  /* small caps carry the utility register, since there's no bold to fall back on */
+  .meta,.chip,.rec,.matchup .tag,button{font-variant-caps:all-small-caps}
 
   .wrap{max-width:1180px;margin:0 auto}
 
@@ -45,17 +67,17 @@
     border-bottom:2px solid var(--seam);
   }
   .mark{
-    font-family:'Saira Condensed',sans-serif;font-weight:800;
-    font-size:clamp(28px,5vw,46px);line-height:.9;letter-spacing:.02em;
+    font-weight:400;
+    font-size:clamp(26px,4.6vw,42px);line-height:.94;letter-spacing:-.005em;
     text-transform:uppercase;
   }
   .mark span{color:var(--bulb);text-shadow:0 0 18px rgba(255,194,74,.45)}
   .meta{
     display:flex;flex-direction:column;gap:3px;
-    font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    font-size:12px;letter-spacing:.08em;text-transform:uppercase;
     color:var(--stencil-dim);margin-left:auto;text-align:right;
   }
-  .meta b{color:var(--stencil);font-weight:600}
+  .meta b{color:var(--stencil)}
 
   /* ---------- board ---------- */
   .board{
@@ -88,8 +110,7 @@
   /* ---------- eyebrow row ---------- */
   .eyebrow{display:flex;align-items:center;gap:8px;min-height:20px}
   .frame{
-    font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:16px;
-    letter-spacing:.08em;text-transform:uppercase;color:var(--bulb);
+    font-size:15px;letter-spacing:.03em;text-transform:uppercase;color:var(--bulb);
     text-shadow:0 0 12px rgba(255,194,74,.4);
   }
   .frame-final{color:var(--stencil-dim);text-shadow:none}
@@ -104,7 +125,7 @@
   @media (prefers-reduced-motion:reduce){.live-dot{animation:none}}
 
   .chip{
-    font-size:9px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+    font-size:11px;letter-spacing:.09em;text-transform:uppercase;
     padding:3px 6px;border:1px solid currentColor;color:var(--stencil-dim);
     white-space:nowrap;
   }
@@ -117,16 +138,15 @@
   .lines{display:flex;flex-direction:column;gap:2px}
   .line{display:flex;align-items:baseline;gap:10px}
   .abbr{
-    font-family:'Saira Condensed',sans-serif;font-weight:700;
-    font-size:27px;letter-spacing:.04em;text-transform:uppercase;
+    font-size:28px;letter-spacing:-.01em;text-transform:uppercase;
     color:var(--stencil);
   }
-  .rec{font-size:10px;color:var(--stencil-dim);letter-spacing:.06em}
+  .rec{font-size:12px;color:var(--stencil-dim);letter-spacing:.04em}
   .runs{
     margin-left:auto;
-    font-family:'Saira Condensed',sans-serif;font-weight:800;
-    font-size:34px;line-height:1;font-variant-numeric:tabular-nums;
-    color:var(--bulb);text-shadow:0 0 16px rgba(255,194,74,.5);
+    font-size:37px;line-height:1;
+    min-width:2ch;text-align:right;
+    color:var(--bulb);text-shadow:0 0 18px rgba(255,194,74,.55);
   }
   .runs-off{color:var(--bulb-dim);text-shadow:none}
   .line-atbat .abbr{color:var(--bulb-hot)}
@@ -135,20 +155,21 @@
   .strip{
     border-top:1px solid var(--seam);padding-top:10px;
     display:flex;align-items:center;gap:12px;flex-wrap:wrap;
-    font-size:11px;color:var(--stencil-dim);
+    font-size:12px;color:var(--stencil-dim);
   }
   .situation{display:flex;align-items:center;gap:10px}
 
   /* bases diamond — the signature */
-  .diamond{position:relative;width:26px;height:26px;flex:none}
+  .diamond{position:relative;width:28px;height:28px;flex:none}
   .bag{
     position:absolute;width:9px;height:9px;background:var(--bulb-dim);
     transform:rotate(45deg);border:1px solid var(--seam);
   }
   .bag-on{background:var(--bulb);box-shadow:0 0 9px var(--bulb)}
-  .bag-2{top:0;left:8.5px}
-  .bag-1{top:8.5px;right:0}
-  .bag-3{top:8.5px;left:0}
+  /* a rotated 11px square has a 15.6px diagonal, so inset by the overhang */
+  .bag-2{top:2.5px;left:8.5px}
+  .bag-1{top:8.5px;right:2.5px}
+  .bag-3{top:8.5px;left:2.5px}
 
   .outs{display:flex;gap:4px}
   .out{
@@ -158,15 +179,14 @@
   .out-on{background:var(--rust);border-color:var(--rust);box-shadow:0 0 7px rgba(196,89,44,.7)}
 
   .count{
-    font-weight:600;font-variant-numeric:tabular-nums;color:var(--stencil);
-    letter-spacing:.04em;
+    color:var(--stencil);letter-spacing:.02em;
   }
   .matchup{display:flex;flex-direction:column;gap:2px;min-width:0}
   .matchup div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .matchup .tag{color:var(--stencil-dim)}
   .matchup .who{color:var(--stencil)}
   .reason{color:var(--rust);letter-spacing:.04em}
-  .first-pitch{font-variant-numeric:tabular-nums;letter-spacing:.06em}
+  .first-pitch{letter-spacing:.04em}
 
   /* ---------- empty / error ---------- */
   .notice{
@@ -174,8 +194,8 @@
     color:var(--stencil-dim);font-size:13px;line-height:1.7;
   }
   .notice b{
-    display:block;color:var(--stencil);font-family:'Saira Condensed',sans-serif;
-    font-weight:700;font-size:22px;letter-spacing:.06em;text-transform:uppercase;
+    display:block;color:var(--stencil);
+    font-size:23px;letter-spacing:.01em;text-transform:uppercase;
     margin-bottom:8px;
   }
   .notice-error{border-color:var(--rust-dim);color:var(--rust)}
@@ -183,7 +203,7 @@
 
   button{
     margin-top:14px;background:none;border:1px solid currentColor;color:inherit;
-    font-family:inherit;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    font-family:inherit;font-size:12px;letter-spacing:.09em;text-transform:uppercase;
     padding:8px 14px;cursor:pointer;
   }
   button:hover{background:rgba(255,255,255,.06)}
