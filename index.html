@@ -2,8 +2,51 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Out of Town Scoreboard</title>
+<meta name="description" content="Every live MLB game on one screen.">
+
+<!-- ===================================================================
+     DROP THESE FOUR FILES IN THE REPO ROOT, using exactly these names:
+
+       favicon.svg           your favicon        (see note below if not SVG)
+       apple-touch-icon.png  your 180px icon     iOS home screen
+       icon-512.png          your 512px icon     Android install
+       og.png                your 1200x630 image link previews
+
+     No paths to edit — the references below already match.
+     Home-screen icons do NOT come from the favicon: iOS reads
+     apple-touch-icon, Android reads the manifest. Both are needed.
+     =================================================================== -->
+
+<!-- If your favicon is .ico or .png, comment this line out and uncomment
+     the matching one instead. Only one should be active. -->
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<!-- <link rel="icon" href="/favicon.ico" sizes="any"> -->
+<!-- <link rel="icon" href="/favicon.png" type="image/png" sizes="32x32"> -->
+
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#262626">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Scoreboard">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<!-- OpenGraph. og:image must be absolute, and PNG not JPEG — JPEG's chroma
+     subsampling turns the dither into mud. Overwrite og.png with your own
+     composited version; dimensions must stay 1200x630. -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Out of Town Scoreboard">
+<meta property="og:description" content="Every live MLB game on one screen.">
+<meta property="og:url" content="https://baseball-daily.netlify.app/">
+<meta property="og:image" content="https://baseball-daily.netlify.app/og.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Out of Town Scoreboard">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://baseball-daily.netlify.app/og.png">
 <link rel="preload" href="fonts/GhostByte-Regular.woff2" as="font" type="font/woff2" crossorigin>
 <style>
   @font-face{
@@ -50,7 +93,12 @@
     font-weight:400;
     font-variant-numeric:tabular-nums lining-nums;
     font-feature-settings:var(--otf);
-    padding:28px 20px 64px;
+    /* black-translucent puts content under the status bar, so add the insets on
+       top of the design padding rather than replacing it */
+    padding:calc(28px + env(safe-area-inset-top,0px))
+            calc(20px + env(safe-area-inset-right,0px))
+            calc(64px + env(safe-area-inset-bottom,0px))
+            calc(20px + env(safe-area-inset-left,0px));
   }
 
   .mark,.frame,.abbr,.notice b{font-feature-settings:var(--otf), 'case' 1}
@@ -227,13 +275,14 @@
   .plate[role=button]:hover{border-color:var(--fg)}
   dialog#detail{
     border:1px solid var(--fg);background:var(--panel);color:var(--fg);
-    padding:0;width:min(880px,94vw);max-height:88vh;font-family:var(--face);
+    padding:0;width:min(880px,94vw);max-height:88vh;max-height:86dvh;
+    font-family:var(--face);
     /* the *{margin:0} reset kills the UA sheet's dialog:modal{margin:auto},
        which is what centres a modal — put it back explicitly */
     inset:0;margin:auto;
   }
   dialog#detail::backdrop{background:rgba(20,20,20,.86)}
-  .sheet{display:flex;flex-direction:column;max-height:88vh}
+  .sheet{display:flex;flex-direction:column;max-height:88vh;max-height:86dvh}
   .sheet-head{display:flex;align-items:center;gap:14px;flex-wrap:wrap;
     padding:16px 18px;border-bottom:1px solid var(--rule)}
   .sheet-title{font-size:24px;text-transform:uppercase;letter-spacing:-.01em}
@@ -256,7 +305,10 @@
   .sheet-note{font-size:12px;color:var(--mid)}
 
   @media (max-width:520px){
-    body{padding:18px 12px 40px}
+    body{padding:calc(18px + env(safe-area-inset-top,0px))
+                 calc(12px + env(safe-area-inset-right,0px))
+                 calc(40px + env(safe-area-inset-bottom,0px))
+                 calc(12px + env(safe-area-inset-left,0px))}
     .meta{margin-left:0;text-align:left}
     .board{grid-template-columns:1fr}
   }

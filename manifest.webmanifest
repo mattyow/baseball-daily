@@ -1,0 +1,16 @@
+{
+  "id": "/",
+  "name": "Out of Town Scoreboard",
+  "short_name": "Scoreboard",
+  "description": "Every live MLB game on one screen.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#262626",
+  "theme_color": "#262626",
+  "icons": [
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
