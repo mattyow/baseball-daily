@@ -14,48 +14,41 @@
     font-style:normal;
     font-display:swap;
   }
-
   :root{
-    /* Ghost Byte ships one weight, so hierarchy on this board comes from size,
-       letterspacing and the bulb glow — never font-weight. Setting a bold
-       anywhere makes the browser fake it and smear the outlines. */
-    --face:'Ghost Byte', ui-sans-serif, system-ui, sans-serif;
+    /* Two inks and nothing else. Every midtone on this board is a dither
+       pattern of the two, the way a 1-bit display had to do it. */
+    --ink:#0A0A0A;
+    --paper:#EDEDED;
+    --tone-a:#9A9A9A;   /* secondary text — solid, because dithered type
+                           under about 30px stops being readable */
+    --tone-b:#7A7A7A;   /* tertiary text — 4.6:1 on ink, still AA at 12px */
+    --line:#5E5E5E;     /* hairlines and unlit fixtures; 3:1 is the bar for
+                           structure rather than text */
 
-    --enamel:#143A2B;
-    --enamel-lit:#1A4634;
-    --enamel-dark:#0B2318;
-    --seam:#071a11;
-    --bulb:#FFC24A;
-    --bulb-hot:#FFE3A6;
-    --bulb-dim:#5E4A1E;
-    --stencil:#F2EFE4;
-    --stencil-dim:#9DAE9F;
-    --rust:#C4592C;
-    --rust-dim:#5E2E1B;
+    /* ordered dither patterns, paper pixels over the ink ground */
+    --d12:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='1' height='1' fill='%23EDEDED'/%3E%3Crect x='2' y='2' width='1' height='1' fill='%23EDEDED'/%3E%3C/svg%3E");
+    --d50:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='2' height='2'%3E%3Crect width='1' height='1' fill='%23EDEDED'/%3E%3Crect x='1' y='1' width='1' height='1' fill='%23EDEDED'/%3E%3C/svg%3E");
+    --hatch:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Cpath d='M-1 3L3 -1M1 5L5 1' stroke='%23EDEDED' stroke-width='1'/%3E%3C/svg%3E");
+
+    /* Ghost Byte ships one weight, so hierarchy comes from size, letterspacing
+       and screening — never font-weight, which the browser would fake. */
+    --face:'Ghost Byte', ui-sans-serif, system-ui, sans-serif;
     --panel-pad:18px;
   }
 
   *{box-sizing:border-box;margin:0;padding:0}
 
   body{
-    background:
-      radial-gradient(ellipse 120% 80% at 50% -10%, var(--enamel-lit) 0%, transparent 60%),
-      var(--enamel-dark);
+    background:var(--ink);
     min-height:100vh;
-    color:var(--stencil);
+    color:var(--paper);
     font-family:var(--face);
     font-weight:400;
-    /* every figure on the board is a column that changes — keep them aligned */
     font-variant-numeric:tabular-nums lining-nums;
     padding:28px 20px 64px;
-    -webkit-font-smoothing:antialiased;
   }
 
-  /* 'case' lifts colons, slashes and dashes to cap height in all-caps strings
-     like FINAL / 11 and DELAYED: RAIN */
   .mark,.frame,.abbr,.notice b{font-feature-settings:'case' 1}
-
-  /* small caps carry the utility register, since there's no bold to fall back on */
   .meta,.chip,.rec,.matchup .tag,button{font-variant-caps:all-small-caps}
 
   .wrap{max-width:1180px;margin:0 auto}
@@ -63,21 +56,29 @@
   /* ---------- masthead ---------- */
   .masthead{
     display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px 28px;
-    padding-bottom:16px;margin-bottom:22px;
-    border-bottom:2px solid var(--seam);
+    padding-bottom:14px;margin-bottom:22px;
+    border-bottom:1px solid var(--paper);
+    box-shadow:0 3px 0 -2px var(--paper);   /* double rule */
   }
   .mark{
-    font-weight:400;
     font-size:clamp(26px,4.6vw,42px);line-height:.94;letter-spacing:-.005em;
-    text-transform:uppercase;
+    text-transform:uppercase;color:var(--paper);
   }
-  .mark span{color:var(--bulb);text-shadow:0 0 18px rgba(255,194,74,.45)}
+  /* Screened type: the glyph is a window onto a dither pattern. Only at sizes
+     where the pattern still resolves. */
+  .mark span,.runs-off{
+    color:transparent;background-image:var(--d50);
+    -webkit-background-clip:text;background-clip:text;
+  }
+  @supports not ((background-clip:text) or (-webkit-background-clip:text)){
+    .mark span,.runs-off{color:var(--tone-b);background-image:none}
+  }
   .meta{
     display:flex;flex-direction:column;gap:3px;
     font-size:12px;letter-spacing:.08em;text-transform:uppercase;
-    color:var(--stencil-dim);margin-left:auto;text-align:right;
+    color:var(--tone-a);margin-left:auto;text-align:right;
   }
-  .meta b{color:var(--stencil)}
+  .meta b{color:var(--paper)}
 
   /* ---------- board ---------- */
   .board{
@@ -87,51 +88,48 @@
 
   .plate{
     position:relative;
-    background:
-      radial-gradient(circle at 1px 1px, rgba(255,255,255,.035) 1px, transparent 1.4px) 0 0/6px 6px,
-      linear-gradient(175deg,var(--enamel-lit),var(--enamel));
-    border:1px solid var(--seam);
-    border-top-color:rgba(255,255,255,.07);
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 2px 0 var(--seam);
+    background-color:var(--ink);
+    background-image:var(--d12);
+    border:1px solid var(--line);
     padding:var(--panel-pad);
     display:flex;flex-direction:column;gap:12px;
   }
-  /* rivets */
-  .plate::before,.plate::after{
-    content:'';position:absolute;top:7px;width:4px;height:4px;border-radius:50%;
-    background:var(--seam);box-shadow:inset 0 1px 0 rgba(255,255,255,.12);
-  }
-  .plate::before{left:7px}
-  .plate::after{right:7px}
+  /* liveness reads as a brighter enclosure rather than a colour */
+  .plate-live{border-color:var(--paper)}
+  .plate-final{background-image:none}
 
-  .plate-alert{border-left:3px solid var(--rust)}
-  .plate-final{opacity:.72}
+  /* delays get a hatched margin — the one texture that isn't a flat screen */
+  .plate-alert{padding-left:calc(var(--panel-pad) + 8px)}
+  .plate-alert::before{
+    content:'';position:absolute;left:0;top:0;bottom:0;width:5px;
+    background:var(--hatch);
+  }
 
   /* ---------- eyebrow row ---------- */
   .eyebrow{display:flex;align-items:center;gap:8px;min-height:20px}
   .frame{
-    font-size:15px;letter-spacing:.03em;text-transform:uppercase;color:var(--bulb);
-    text-shadow:0 0 12px rgba(255,194,74,.4);
+    font-size:15px;letter-spacing:.03em;text-transform:uppercase;
+    color:var(--paper);
   }
-  .frame-final{color:var(--stencil-dim);text-shadow:none}
-  .frame-alert{color:var(--rust);text-shadow:none}
+  .frame-final{color:var(--tone-b)}
+  /* inversion was how a 1-bit interface shouted */
+  .frame-alert{background:var(--paper);color:var(--ink);padding:1px 5px}
 
   .live-dot{
-    width:7px;height:7px;border-radius:50%;background:var(--bulb);flex:none;
-    box-shadow:0 0 8px var(--bulb);
-    animation:pulse 2.4s ease-in-out infinite;
+    width:7px;height:7px;background:var(--paper);flex:none;
+    animation:blink 1.6s steps(1,end) infinite;
   }
-  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  @keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
   @media (prefers-reduced-motion:reduce){.live-dot{animation:none}}
 
   .chip{
     font-size:11px;letter-spacing:.09em;text-transform:uppercase;
-    padding:3px 6px;border:1px solid currentColor;color:var(--stencil-dim);
+    padding:3px 6px;border:1px solid var(--tone-a);color:var(--tone-a);
     white-space:nowrap;
   }
-  .chip-extras{color:var(--bulb)}
-  .chip-dh{color:var(--stencil)}
-  .chip-alert{color:var(--rust);border-color:var(--rust)}
+  .chip-extras{background:var(--paper);color:var(--ink);border-color:var(--paper)}
+  .chip-dh{color:var(--paper);border-color:var(--paper)}
+  .chip-alert{background:var(--hatch);color:var(--paper);border-color:var(--paper)}
   .eyebrow .chip:last-child{margin-left:auto}
 
   /* ---------- line score ---------- */
@@ -139,75 +137,72 @@
   .line{display:flex;align-items:baseline;gap:10px}
   .abbr{
     font-size:28px;letter-spacing:-.01em;text-transform:uppercase;
-    color:var(--stencil);
+    color:var(--paper);
   }
-  .rec{font-size:12px;color:var(--stencil-dim);letter-spacing:.04em}
+  .rec{font-size:12px;color:var(--tone-b);letter-spacing:.04em}
   .runs{
     margin-left:auto;
     font-size:37px;line-height:1;
     min-width:2ch;text-align:right;
-    color:var(--bulb);text-shadow:0 0 18px rgba(255,194,74,.55);
+    color:var(--paper);
   }
-  .runs-off{color:var(--bulb-dim);text-shadow:none}
-  .line-atbat .abbr{color:var(--bulb-hot)}
+  /* batting side is marked by rule, not by brightness */
+  .line-atbat .abbr{
+    text-decoration:underline;text-underline-offset:3px;
+    text-decoration-thickness:2px;
+  }
 
   /* ---------- footer strip ---------- */
   .strip{
-    border-top:1px solid var(--seam);padding-top:10px;
+    border-top:1px solid var(--line);padding-top:10px;
     display:flex;align-items:center;gap:12px;flex-wrap:wrap;
-    font-size:12px;color:var(--stencil-dim);
+    font-size:12px;color:var(--tone-a);
   }
   .situation{display:flex;align-items:center;gap:10px}
 
-  /* bases diamond — the signature */
   .diamond{position:relative;width:28px;height:28px;flex:none}
   .bag{
-    position:absolute;width:9px;height:9px;background:var(--bulb-dim);
-    transform:rotate(45deg);border:1px solid var(--seam);
+    position:absolute;width:9px;height:9px;
+    background:transparent;border:1px solid var(--line);
+    transform:rotate(45deg);
   }
-  .bag-on{background:var(--bulb);box-shadow:0 0 9px var(--bulb)}
-  /* a rotated 11px square has a 15.6px diagonal, so inset by the overhang */
+  .bag-on{background:var(--paper);border-color:var(--paper)}
   .bag-2{top:2.5px;left:8.5px}
   .bag-1{top:8.5px;right:2.5px}
   .bag-3{top:8.5px;left:2.5px}
 
   .outs{display:flex;gap:4px}
-  .out{
-    width:7px;height:7px;border-radius:50%;
-    background:transparent;border:1px solid var(--bulb-dim);
-  }
-  .out-on{background:var(--rust);border-color:var(--rust);box-shadow:0 0 7px rgba(196,89,44,.7)}
+  .out{width:7px;height:7px;background:transparent;border:1px solid var(--line)}
+  .out-on{background:var(--paper);border-color:var(--paper)}
 
-  .count{
-    color:var(--stencil);letter-spacing:.02em;
-  }
+  .count{color:var(--paper);letter-spacing:.02em}
   .matchup{display:flex;flex-direction:column;gap:2px;min-width:0}
   .matchup div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .matchup .tag{color:var(--stencil-dim)}
-  .matchup .who{color:var(--stencil)}
-  .reason{color:var(--rust);letter-spacing:.04em}
+  .matchup .tag{color:var(--tone-b)}
+  .matchup .who{color:var(--paper)}
+  .reason{color:var(--paper);letter-spacing:.04em}
   .first-pitch{letter-spacing:.04em}
 
   /* ---------- empty / error ---------- */
   .notice{
-    border:1px dashed var(--seam);padding:34px 24px;text-align:center;
-    color:var(--stencil-dim);font-size:13px;line-height:1.7;
+    border:1px solid var(--line);padding:34px 24px;text-align:center;
+    color:var(--tone-a);font-size:13px;line-height:1.7;
   }
   .notice b{
-    display:block;color:var(--stencil);
+    display:inline-block;background:var(--paper);color:var(--ink);
     font-size:23px;letter-spacing:.01em;text-transform:uppercase;
-    margin-bottom:8px;
+    padding:1px 8px;margin-bottom:10px;
   }
-  .notice-error{border-color:var(--rust-dim);color:var(--rust)}
-  .notice-error b{color:var(--rust)}
+  .notice-error{border-color:var(--paper)}
 
   button{
-    margin-top:14px;background:none;border:1px solid currentColor;color:inherit;
+    margin-top:14px;background:var(--ink);border:1px solid var(--paper);
+    color:var(--paper);
     font-family:inherit;font-size:12px;letter-spacing:.09em;text-transform:uppercase;
     padding:8px 14px;cursor:pointer;
   }
-  button:hover{background:rgba(255,255,255,.06)}
-  :focus-visible{outline:2px solid var(--bulb);outline-offset:2px}
+  button:hover{background:var(--paper);color:var(--ink)}
+  :focus-visible{outline:2px solid var(--paper);outline-offset:2px}
 
   @media (max-width:520px){
     body{padding:18px 12px 40px}
