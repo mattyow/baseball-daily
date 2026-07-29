@@ -164,6 +164,18 @@
   .abbr{
     font-size:28px;letter-spacing:-.01em;text-transform:uppercase;color:var(--fg);
   }
+  .logo{
+    width:22px;height:22px;flex:none;align-self:center;
+    position:relative;top:2px;
+    background-color:var(--fg);
+    -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+    -webkit-mask-position:center;mask-position:center;
+    -webkit-mask-size:contain;mask-size:contain;
+  }
+  .logo-dither{background-color:transparent;background-image:var(--screen)}
+  .plate-final .logo{background-color:var(--dim)}
+  .plate-final .logo-dither{background-color:transparent}
+  .colhead .logo-space{width:22px;flex:none}
   .rec{font-size:12px;color:var(--dim);letter-spacing:.04em}
   .runs{
     font-size:37px;line-height:1;
@@ -304,6 +316,9 @@
 
   const USE_PROXY = false;
 
+  const LOGOS = 'solid';
+  const LOGO_URL = id => `https://www.mlbstatic.com/team-logos/${id}.svg`;
+
   const DIRECT = 'https://statsapi.mlb.com/api/v1/schedule';
   const PROXY  = '/api/mlb';
   const API = USE_PROXY ? PROXY : DIRECT;
@@ -377,6 +392,7 @@
       },
       awayRuns: ls.teams?.away?.runs ?? game.teams?.away?.score,
       homeRuns: ls.teams?.home?.runs ?? game.teams?.home?.score,
+      awayId: game.teams?.away?.team?.id, homeId: game.teams?.home?.team?.id,
       awayHits: ls.teams?.away?.hits, homeHits: ls.teams?.home?.hits,
       awayErrors: ls.teams?.away?.errors, homeErrors: ls.teams?.home?.errors,
       innings: ls.innings || []
@@ -419,18 +435,27 @@
     if (showRuns) {
       const head = el('div', 'colhead');
       head.append(el('span', 'caret-space'));
+      if (LOGOS !== 'off') head.append(el('span', 'logo-space'));
       const hn = el('div', 'nums');
       hn.append(el('span', 'runs', 'R'), el('span', 'hits', 'H'), el('span', 'errors', 'E'));
       head.append(hn);
       lines.append(head);
     }
 
-    [['away', g.away, g.awayRuns, g.awayHits, g.awayErrors],
-     ['home', g.home, g.homeRuns, g.homeHits, g.homeErrors]]
-    .forEach(([side, team, runs, hits, errors]) => {
+    [['away', g.away, g.awayRuns, g.awayHits, g.awayErrors, g.awayId],
+     ['home', g.home, g.homeRuns, g.homeHits, g.homeErrors, g.homeId]]
+    .forEach(([side, team, runs, hits, errors, teamId]) => {
       const atBat = g.state === 'live' &&
                     ((side === 'home' && battingHome) || (side === 'away' && !battingHome));
       const line = el('div', 'line' + (atBat ? ' line-atbat' : ''));
+      if (LOGOS !== 'off' && teamId != null) {
+        const mark = el('div', 'logo' + (LOGOS === 'dither' ? ' logo-dither' : ''));
+        const src = `url("${LOGO_URL(teamId)}")`;
+        mark.style.webkitMaskImage = src;
+        mark.style.maskImage = src;
+        mark.setAttribute('role', 'presentation');
+        line.append(mark);
+      }
       line.append(el('span', 'abbr', team.team?.abbreviation || team.team?.name || '—'));
       const rec = team.leagueRecord;
       if (rec && g.state === 'preview') line.append(el('span', 'rec', `${rec.wins}-${rec.losses}`));
