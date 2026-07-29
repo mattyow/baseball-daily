@@ -173,8 +173,14 @@
     -webkit-mask-size:contain;mask-size:contain;
   }
   .logo-dither{background-color:transparent;background-image:var(--screen)}
+  .logo-asis{
+    background-color:transparent;
+    background-repeat:no-repeat;background-position:center;background-size:contain;
+    -webkit-mask-image:none;mask-image:none;
+  }
   .plate-final .logo{background-color:var(--dim)}
-  .plate-final .logo-dither{background-color:transparent}
+  .plate-final .logo-dither,.plate-final .logo-asis{background-color:transparent}
+  .plate-final .logo-asis{opacity:.62}
   .colhead .logo-space{width:22px;flex:none}
   .rec{font-size:12px;color:var(--dim);letter-spacing:.04em}
   .runs{
@@ -213,6 +219,7 @@
   .matchup .tag{color:var(--dim)}
   .matchup .who{color:var(--fg)}
   .reason{color:var(--mid);letter-spacing:.04em}
+  .makeup{color:var(--dim);letter-spacing:.04em}
   .first-pitch{letter-spacing:.04em}
 
   .notice{
@@ -317,7 +324,7 @@
   const USE_PROXY = false;
 
   const LOGOS = 'solid';
-  const LOGO_URL = id => `https://www.mlbstatic.com/team-logos/${id}.svg`;
+  const LOGO_URL = id => `/logos/${id}.svg`;
 
   const DIRECT = 'https://statsapi.mlb.com/api/v1/schedule';
   const PROXY  = '/api/mlb';
@@ -379,6 +386,10 @@
       state: isAlert ? 'alert' : isFinal ? 'final' : isLive ? 'live' : 'preview',
       detail,
       reason: st.reason || null,
+      isPostponed: /postpon/i.test(detail),
+      isSuspended: /suspend/i.test(detail),
+      makeup: game.rescheduleDate || game.rescheduleGameDate ||
+              game.resumeDate || game.resumeGameDate || null,
       inning,
       inningState: ls.inningState || '',
       isExtras: !!inning && inning > scheduledInnings,
@@ -449,10 +460,16 @@
                     ((side === 'home' && battingHome) || (side === 'away' && !battingHome));
       const line = el('div', 'line' + (atBat ? ' line-atbat' : ''));
       if (LOGOS !== 'off' && teamId != null) {
-        const mark = el('div', 'logo' + (LOGOS === 'dither' ? ' logo-dither' : ''));
+        const variant = LOGOS === 'dither' ? ' logo-dither'
+                      : LOGOS === 'asis'   ? ' logo-asis' : '';
+        const mark = el('div', 'logo' + variant);
         const src = `url("${LOGO_URL(teamId)}")`;
-        mark.style.webkitMaskImage = src;
-        mark.style.maskImage = src;
+        if (LOGOS === 'asis') {
+          mark.style.backgroundImage = src;
+        } else {
+          mark.style.webkitMaskImage = src;
+          mark.style.maskImage = src;
+        }
         mark.setAttribute('role', 'presentation');
         line.append(mark);
       }
@@ -507,6 +524,13 @@
 
     } else if (g.state === 'alert') {
       strip.append(el('span', 'reason', g.reason || g.detail));
+      if (g.makeup) {
+        const when = new Date(g.makeup + 'T12:00:00');
+        if (!isNaN(when)) {
+          strip.append(el('span', 'makeup', 'makeup ' +
+            when.toLocaleDateString([], { month: 'short', day: 'numeric' })));
+        }
+      }
 
     } else if (g.state === 'preview') {
       const m = el('div', 'matchup');
@@ -725,7 +749,9 @@
           if (SKIP_TYPES.includes(gm.gameType)) return;
           const g = read(gm);
           const isToday = (gm.officialDate || d.date) === today;
-          if (isToday || g.state === 'live' || g.state === 'alert') keep.push(g);
+          const stillPlaying = g.state === 'live' ||
+            (g.state === 'alert' && g.inning != null && !g.isPostponed && !g.isSuspended);
+          if (isToday || stillPlaying) keep.push(g);
         });
       });
 
