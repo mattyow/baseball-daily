@@ -558,6 +558,7 @@
     node.append(strip);
 
     /* the whole card is the affordance; keyboard reachable, not a nested button */
+    node.dataset.pk = g.pk;
     node.tabIndex = 0;
     node.setAttribute('role', 'button');
     node.setAttribute('aria-label',
@@ -575,10 +576,19 @@
   const dlg = document.getElementById('detail');
   const sheetBody = document.getElementById('sheet-body');
   let openPk = null;
+  let openedFrom = null;          // pk of the card that opened the sheet
   const boxCache = new Map();     // gamePk -> { at, data }
 
   document.getElementById('sheet-close').addEventListener('click', () => dlg.close());
-  dlg.addEventListener('close', () => { openPk = null; });
+  dlg.addEventListener('close', () => {
+    // A repaint while the sheet was open replaced the card the dialog would
+    // normally hand focus back to, which drops focus to <body> and leaves a
+    // keypress with nowhere sensible to go. Put it back on the right card.
+    const card = openedFrom != null && board.querySelector(`[data-pk="${openedFrom}"]`);
+    openPk = null; openedFrom = null;
+    delete dlg.dataset.pk;
+    if (card) card.focus();
+  });
   dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
 
   const boxUrl = pk => USE_PROXY
@@ -667,6 +677,9 @@
 
   function renderSheet(g, box, err) {
     const keepScroll = sheetBody.scrollTop;
+    // observable identity: check document.querySelector('#detail').dataset.pk
+    // against the card you clicked if the sheet ever shows the wrong game
+    dlg.dataset.pk = g.pk;
 
     document.getElementById('sheet-title').textContent =
       `${g.away.team?.abbreviation || '—'} @ ${g.home.team?.abbreviation || '—'}`;
@@ -705,24 +718,43 @@
     sheetBody.scrollTop = keepScroll;
   }
 
+  // Opening is the only path allowed to set openPk or call showModal. It is
+  // reached from a card click and nowhere else.
   async function openSheet(g) {
     openPk = g.pk;
-    renderSheet(g, boxCache.get(g.pk)?.data || null, null);
+    openedFrom = g.pk;
+    await fillSheet(g);
     if (!dlg.open) dlg.showModal();
+  }
+
+  // Refresh path. Updates content in place; cannot open, cannot change which
+  // game is displayed, and bails if the identity doesn't match what's open.
+  async function syncSheet(g) {
+    if (!dlg.open || g.pk !== openPk) return;
+    await fillSheet(g);
+  }
+
+  async function fillSheet(g) {
+    const pk = g.pk;
+    renderSheet(g, boxCache.get(pk)?.data || null, null);
     try {
-      const box = await getBox(g.pk);
-      if (openPk === g.pk) renderSheet(g, box, null);
+      const box = await getBox(pk);
+      if (openPk === pk && dlg.dataset.pk === String(pk)) renderSheet(g, box, null);
     } catch (e) {
-      if (openPk === g.pk) renderSheet(g, null, e.message);
+      if (openPk === pk && dlg.dataset.pk === String(pk)) renderSheet(g, null, e.message);
     }
   }
 
   // ---------- order the board ----------
   const RANK = { live: 0, alert: 1, preview: 2, final: 3 };
+  // Every term is coerced to a finite number. A single unparseable gameDate
+  // returning NaN would otherwise make the comparator inconsistent and the
+  // resulting order arbitrary.
+  const startMs = g => { const n = Date.parse(g.startsAt); return Number.isFinite(n) ? n : 0; };
   const order = (a, b) =>
-    RANK[a.state] - RANK[b.state] ||
-    new Date(a.startsAt) - new Date(b.startsAt) ||
-    a.gameNumber - b.gameNumber;
+    (RANK[a.state] ?? 9) - (RANK[b.state] ?? 9) ||
+    startMs(a) - startMs(b) ||
+    (a.gameNumber || 1) - (b.gameNumber || 1);
 
   // ---------- fetch + paint ----------
   async function refresh() {
@@ -762,10 +794,11 @@
     document.getElementById('m-live').textContent = games.filter(g => g.state === 'live').length;
     document.getElementById('m-updated').textContent = 'updated ' + clockTime(new Date().toISOString());
 
-    // an open sheet tracks the same 15s refresh as the board behind it
+    // an open sheet tracks the same 15s refresh as the board behind it, but
+    // only ever as an in-place update of the game already showing
     if (openPk) {
       const fresh = games.find(x => x.pk === openPk);
-      if (fresh) openSheet(fresh);
+      if (fresh) syncSheet(fresh);
     }
 
     board.innerHTML = '';
