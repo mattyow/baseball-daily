@@ -325,6 +325,9 @@
 
   const LOGOS = 'solid';
   const LOGO_URL = id => `/logos/${id}.svg`;
+  let logosReady = false;
+  let logoProbe = null;
+  let lastGames = null, lastToday = null;
 
   const DIRECT = 'https://statsapi.mlb.com/api/v1/schedule';
   const PROXY  = '/api/mlb';
@@ -446,7 +449,7 @@
     if (showRuns) {
       const head = el('div', 'colhead');
       head.append(el('span', 'caret-space'));
-      if (LOGOS !== 'off') head.append(el('span', 'logo-space'));
+      if (LOGOS !== 'off' && logosReady) head.append(el('span', 'logo-space'));
       const hn = el('div', 'nums');
       hn.append(el('span', 'runs', 'R'), el('span', 'hits', 'H'), el('span', 'errors', 'E'));
       head.append(hn);
@@ -459,7 +462,7 @@
       const atBat = g.state === 'live' &&
                     ((side === 'home' && battingHome) || (side === 'away' && !battingHome));
       const line = el('div', 'line' + (atBat ? ' line-atbat' : ''));
-      if (LOGOS !== 'off' && teamId != null) {
+      if (LOGOS !== 'off' && logosReady && teamId != null) {
         const variant = LOGOS === 'dither' ? ' logo-dither'
                       : LOGOS === 'asis'   ? ' logo-asis' : '';
         const mark = el('div', 'logo' + variant);
@@ -762,7 +765,33 @@
     }
   }
 
+  function checkLogos(games) {
+    if (LOGOS === 'off' || logoProbe) return;
+    const ids = [...new Set(games.flatMap(g => [g.awayId, g.homeId]).filter(v => v != null))];
+    if (!ids.length) return;
+    logoProbe = Promise.all(ids.map(id => new Promise(done => {
+      const img = new Image();
+      img.onload = () => done(null);
+      img.onerror = () => done(id);
+      img.src = LOGO_URL(id);
+    }))).then(results => {
+      const missing = results.filter(Boolean);
+      if (missing.length) {
+        console.warn(
+          `Scoreboard: logos disabled — ${missing.length} of ${ids.length} missing from ` +
+          `${LOGO_URL('<id>')}: ${missing.join(', ')}. ` +
+          `No space is reserved until every logo on the board is present.`);
+        return;
+      }
+      logosReady = true;
+      if (lastGames) paint(lastGames, lastToday);
+    });
+  }
+
   function paint(games, today) {
+    lastGames = games; lastToday = today;
+    checkLogos(games);
+
     document.getElementById('m-date').textContent =
       new Date(today + 'T12:00:00').toLocaleDateString([], {
         weekday: 'short', month: 'short', day: 'numeric'
