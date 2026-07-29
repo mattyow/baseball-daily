@@ -6,25 +6,7 @@
 <title>Out of Town Scoreboard</title>
 <meta name="description" content="Every live MLB game on one screen.">
 
-<!-- ===================================================================
-     DROP THESE FOUR FILES IN THE REPO ROOT, using exactly these names:
-
-       favicon.svg           your favicon        (see note below if not SVG)
-       apple-touch-icon.png  your 180px icon     iOS home screen
-       icon-512.png          your 512px icon     Android install
-       og.png                your 1200x630 image link previews
-
-     No paths to edit — the references below already match.
-     Home-screen icons do NOT come from the favicon: iOS reads
-     apple-touch-icon, Android reads the manifest. Both are needed.
-     =================================================================== -->
-
-<!-- If your favicon is .ico or .png, comment this line out and uncomment
-     the matching one instead. Only one should be active. -->
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<!-- <link rel="icon" href="/favicon.ico" sizes="any"> -->
-<!-- <link rel="icon" href="/favicon.png" type="image/png" sizes="32x32"> -->
-
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#262626">
@@ -33,9 +15,6 @@
 <meta name="apple-mobile-web-app-title" content="Scoreboard">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-<!-- OpenGraph. og:image must be absolute, and PNG not JPEG — JPEG's chroma
-     subsampling turns the dither into mud. Overwrite og.png with your own
-     composited version; dimensions must stay 1200x630. -->
 <meta property="og:type" content="website">
 <meta property="og:title" content="Out of Town Scoreboard">
 <meta property="og:description" content="Every live MLB game on one screen.">
@@ -53,31 +32,26 @@
     font-family:'Ghost Byte';
     src:url('fonts/GhostByte-Regular.woff2') format('woff2'),
         url('fonts/GhostByte-Regular.woff') format('woff');
-    font-weight:400;          /* the only weight there is — see note below */
+    font-weight:400;
     font-style:normal;
     font-display:swap;
   }
   :root{
-    /* A five-step grey ramp. Every text value is >=4.5:1 against the panel it
-       sits on; --rule clears 3:1, which is the bar for structure not type. */
-    --bg:#262626;      /* page, and the surface finished games recede to */
-    --panel:#353535;   /* live panel, one step up from the page */
-    --rule:#7E7E7E;    /* hairlines, unlit bases and outs */
-    --dim:#9D9D9D;     /* records, field labels        4.5:1 on panel */
-    --mid:#BDBDBD;     /* secondary text, reasons      6.5:1 on panel */
-    --fg:#E8E8E8;      /* scores, team codes          10.0:1 on panel */
 
-    /* Dither lives in the negative space between panels, never behind text —
-       that was what made the last pass unreadable. */
+    --bg:#262626;
+    --panel:#353535;
+    --rule:#7E7E7E;
+    --dim:#9D9D9D;
+    --mid:#BDBDBD;
+    --fg:#E8E8E8;
+
     --dither:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='1' height='1' fill='%234A4A4A'/%3E%3Crect x='2' y='2' width='1' height='1' fill='%234A4A4A'/%3E%3C/svg%3E");
-    /* the two places a pattern still earns its keep */
+
     --hatch:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Cpath d='M-1 3L3 -1M1 5L5 1' stroke='%23BDBDBD' stroke-width='1'/%3E%3C/svg%3E");
     --screen:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='2' height='2'%3E%3Crect width='1' height='1' fill='%23BDBDBD'/%3E%3Crect x='1' y='1' width='1' height='1' fill='%23BDBDBD'/%3E%3C/svg%3E");
 
     --face:'Ghost Byte', ui-sans-serif, system-ui, sans-serif;
-    /* font-feature-settings replaces wholesale rather than accumulating, so the
-       base set lives here and anything needing 'case' composes on top of it.
-       ss01 = alternate capital I, ss04 = alternate bullet. */
+
     --otf:'ss01' 1, 'ss04' 1;
     --panel-pad:18px;
   }
@@ -93,8 +67,7 @@
     font-weight:400;
     font-variant-numeric:tabular-nums lining-nums;
     font-feature-settings:var(--otf);
-    /* black-translucent puts content under the status bar, so add the insets on
-       top of the design padding rather than replacing it */
+
     padding:calc(28px + env(safe-area-inset-top,0px))
             calc(20px + env(safe-area-inset-right,0px))
             calc(64px + env(safe-area-inset-bottom,0px))
@@ -106,18 +79,17 @@
 
   .wrap{max-width:1180px;margin:0 auto}
 
-  /* ---------- masthead ---------- */
   .masthead{
     display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px 28px;
     padding-bottom:14px;margin-bottom:22px;
     border-bottom:1px solid var(--rule);
-    box-shadow:0 3px 0 -2px var(--rule);   /* double rule */
+    box-shadow:0 3px 0 -2px var(--rule);
   }
   .mark{
     font-size:clamp(26px,4.6vw,42px);line-height:.94;letter-spacing:-.005em;
     text-transform:uppercase;color:var(--fg);
   }
-  /* the wordmark is the one screened thing left — 42px, and carries no data */
+
   .mark span{
     color:transparent;background-image:var(--screen);
     -webkit-background-clip:text;background-clip:text;
@@ -132,7 +104,6 @@
   }
   .meta b{color:var(--fg)}
 
-  /* ---------- board ---------- */
   .board{
     display:grid;gap:12px;
     grid-template-columns:repeat(auto-fill,minmax(288px,1fr));
@@ -140,13 +111,13 @@
 
   .plate{
     position:relative;
-    background:var(--panel);        /* solid. text needs a clean ground. */
+    background:var(--panel);
     border:1px solid var(--rule);
     padding:var(--panel-pad);
     display:flex;flex-direction:column;gap:12px;
   }
   .plate-live{border-color:var(--fg)}
-  .plate-final{background:var(--bg)}   /* settled games sink to page level */
+  .plate-final{background:var(--bg)}
 
   .plate-alert{padding-left:calc(var(--panel-pad) + 8px)}
   .plate-alert::before{
@@ -154,7 +125,6 @@
     background:var(--hatch);
   }
 
-  /* ---------- eyebrow row ---------- */
   .eyebrow{display:flex;align-items:center;gap:8px;min-height:20px}
   .frame{
     font-size:15px;letter-spacing:.03em;text-transform:uppercase;color:var(--fg);
@@ -179,15 +149,13 @@
   .chip-alert{background:var(--hatch);color:var(--fg);border-color:var(--fg)}
   .eyebrow .chip:last-child{margin-left:auto}
 
-  /* ---------- line score ---------- */
   .lines{display:flex;flex-direction:column;gap:2px}
   .line{display:flex;align-items:baseline;gap:10px}
-  /* At-bat cue. The box is present on every row and only takes colour on the
-     batting one, so nothing shifts horizontally when it moves. */
+
   .line::before{
     content:'';flex:none;align-self:center;
     width:0;height:0;margin-right:-3px;
-    position:relative;top:2px;   /* measured: centres it on cap height, not the line box */
+    position:relative;top:2px;
     border-top:5px solid transparent;
     border-bottom:5px solid transparent;
     border-left:7px solid transparent;
@@ -202,11 +170,9 @@
     width:46px;text-align:right;flex:none;
     color:var(--fg);
   }
-  /* the trailing side steps down the ramp instead of being screened */
+
   .runs-off{color:var(--dim)}
 
-
-  /* ---------- footer strip ---------- */
   .strip{
     border-top:1px solid var(--rule);padding-top:10px;
     display:flex;align-items:center;gap:12px;flex-wrap:wrap;
@@ -214,9 +180,6 @@
   }
   .situation{display:flex;align-items:center;gap:10px}
 
-  /* 32px field, 8px bags, centres 10px out. At 28/9 the rotated corners of
-     second and third actually overlapped, which read as one blob. Offsets are
-     border-box: (32-8)/2 = 12 centres the cross axis, 12-10 = 2 sets the radius. */
   .diamond{position:relative;width:32px;height:32px;flex:none}
   .bag{
     position:absolute;width:8px;height:8px;
@@ -240,7 +203,6 @@
   .reason{color:var(--mid);letter-spacing:.04em}
   .first-pitch{letter-spacing:.04em}
 
-  /* ---------- empty / error ---------- */
   .notice{
     border:1px solid var(--rule);padding:34px 24px;text-align:center;
     color:var(--mid);font-size:13px;line-height:1.7;
@@ -260,8 +222,6 @@
   button:hover{background:var(--fg);color:var(--bg)}
   :focus-visible{outline:2px solid var(--fg);outline-offset:2px}
 
-  /* ---------- R/H/E columns ---------- */
-  /* fixed px widths, not ch, so the 10px header aligns with the 37px figures */
   .nums{display:flex;align-items:baseline;gap:8px;margin-left:auto}
   .colhead{display:flex;gap:10px;font-size:10px;color:var(--dim);
     letter-spacing:.14em;text-transform:uppercase;margin-bottom:2px}
@@ -270,15 +230,13 @@
   .hits,.errors{font-size:15px;color:var(--mid);width:22px;text-align:right;flex:none}
   .errors{color:var(--dim)}
 
-  /* ---------- detail sheet ---------- */
   .plate[role=button]{cursor:pointer}
   .plate[role=button]:hover{border-color:var(--fg)}
   dialog#detail{
     border:1px solid var(--fg);background:var(--panel);color:var(--fg);
     padding:0;width:min(880px,94vw);max-height:88vh;max-height:86dvh;
     font-family:var(--face);
-    /* the *{margin:0} reset kills the UA sheet's dialog:modal{margin:auto},
-       which is what centres a modal — put it back explicitly */
+
     inset:0;margin:auto;
   }
   dialog#detail::backdrop{background:rgba(20,20,20,.86)}
@@ -344,23 +302,16 @@
 (() => {
   'use strict';
 
-  // The browser calls the MLB API directly by default. If it gets blocked on
-  // CORS, flip this to true — requests then route through the Netlify function
-  // in netlify/functions/mlb.mjs, which also caches for 10s at the edge.
   const USE_PROXY = false;
 
   const DIRECT = 'https://statsapi.mlb.com/api/v1/schedule';
   const PROXY  = '/api/mlb';
   const API = USE_PROXY ? PROXY : DIRECT;
   const REFRESH_MS = 15000;
-  const SKIP_TYPES = ['S','E'];            // spring training + exhibition
+  const SKIP_TYPES = ['S','E'];
   const board = document.getElementById('board');
   let timer = null;
 
-  // ---------- helpers ----------
-
-  // The baseball "day" runs on Eastern time, and a 10pm PT game in the 13th is
-  // still today's game at 2am ET. Pull a 2-day window and filter.
   const etDate = (offsetDays = 0) => {
     const d = new Date(Date.now() + offsetDays * 864e5);
     return new Intl.DateTimeFormat('en-CA', {
@@ -368,8 +319,6 @@
     }).format(d);
   };
 
-  // "Vladimir Guerrero Jr." -> "V. Guerrero Jr."  (keeps suffixes, handles
-  // mononyms by leaving them alone)
   const shortName = (full) => {
     if (!full) return '';
     const parts = full.trim().split(/\s+/);
@@ -389,7 +338,6 @@
     return n;
   };
 
-  // ---------- interpret one game ----------
   function read(game) {
     const ls      = game.linescore || {};
     const st      = game.status || {};
@@ -397,7 +345,6 @@
     const detail  = st.detailedState || '';
     const abstract= st.abstractGameState;
 
-    // D=delayed  U=suspended  and "Postponed" arrives via detailedState
     const isAlert = coded === 'D' || coded === 'U' ||
                     /delay|postpon|suspend/i.test(detail);
     const isFinal = !isAlert && (abstract === 'Final' || coded === 'F' || coded === 'O');
@@ -411,14 +358,14 @@
       away: game.teams?.away || {},
       home: game.teams?.home || {},
       startsAt: game.gameDate,
-      // doubleHeader: 'Y' traditional, 'S' split, 'N' none
+
       isDoubleHeader: game.doubleHeader === 'Y' || game.doubleHeader === 'S',
       gameNumber: game.gameNumber || 1,
       state: isAlert ? 'alert' : isFinal ? 'final' : isLive ? 'live' : 'preview',
       detail,
       reason: st.reason || null,
       inning,
-      inningState: ls.inningState || '',      // Top | Middle | Bottom | End
+      inningState: ls.inningState || '',
       isExtras: !!inning && inning > scheduledInnings,
       balls: ls.balls, strikes: ls.strikes, outs: ls.outs,
       pitcher: ls.defense?.pitcher?.fullName,
@@ -436,11 +383,9 @@
     };
   }
 
-  // ---------- render one plate ----------
   function plate(g) {
     const node = el('article', 'plate plate-' + g.state);
 
-    /* eyebrow: where we are in the game */
     const eyebrow = el('div', 'eyebrow');
     if (g.state === 'live') eyebrow.append(el('span', 'live-dot'));
 
@@ -450,7 +395,7 @@
       frame = `${half} ${g.inning ?? ''}`.trim().toUpperCase();
       if (!frame) frame = 'IN PROGRESS';
     } else if (g.state === 'final') {
-      // extras get recorded in the final line, the way a box score does it
+
       frame = g.isExtras ? `FINAL / ${g.inning}` : 'FINAL';
       frameCls += ' frame-final';
     } else if (g.state === 'alert') {
@@ -465,9 +410,8 @@
     if (g.isDoubleHeader) eyebrow.append(el('span', 'chip chip-dh', 'game ' + g.gameNumber));
     node.append(eyebrow);
 
-    /* the line score itself */
     const lines = el('div', 'lines');
-    // A postponed game has no score to show — only a delay mid-game does.
+
     const showRuns = g.state === 'live' || g.state === 'final' ||
                      (g.state === 'alert' && g.inning != null);
     const battingHome = /bottom/i.test(g.inningState);
@@ -502,7 +446,6 @@
     });
     node.append(lines);
 
-    /* bottom strip: situation, or why there isn't one */
     const strip = el('div', 'strip');
 
     if (g.state === 'live' && !/middle|end/i.test(g.inningState)) {
@@ -557,7 +500,6 @@
 
     node.append(strip);
 
-    /* the whole card is the affordance; keyboard reachable, not a nested button */
     node.dataset.pk = g.pk;
     node.tabIndex = 0;
     node.setAttribute('role', 'button');
@@ -572,18 +514,15 @@
     return node;
   }
 
-  // ---------- detail sheet ----------
   const dlg = document.getElementById('detail');
   const sheetBody = document.getElementById('sheet-body');
   let openPk = null;
-  let openedFrom = null;          // pk of the card that opened the sheet
-  const boxCache = new Map();     // gamePk -> { at, data }
+  let openedFrom = null;
+  const boxCache = new Map();
 
   document.getElementById('sheet-close').addEventListener('click', () => dlg.close());
   dlg.addEventListener('close', () => {
-    // A repaint while the sheet was open replaced the card the dialog would
-    // normally hand focus back to, which drops focus to <body> and leaves a
-    // keypress with nowhere sensible to go. Put it back on the right card.
+
     const card = openedFrom != null && board.querySelector(`[data-pk="${openedFrom}"]`);
     openPk = null; openedFrom = null;
     delete dlg.dataset.pk;
@@ -595,8 +534,6 @@
     ? `/api/mlb/boxscore?gamePk=${pk}`
     : `https://statsapi.mlb.com/api/v1/game/${pk}/boxscore`;
 
-  // One request per open card, not per poll — cached just under the refresh
-  // interval so an open sheet still tracks a live game.
   async function getBox(pk) {
     const hit = boxCache.get(pk);
     if (hit && Date.now() - hit.at < 12000) return hit.data;
@@ -624,7 +561,7 @@
       tr.append(el('td', 'who', team.team?.abbreviation || '—'));
       g.innings.forEach(i => {
         const v = i[side]?.runs;
-        // X is the traditional mark for a half-inning that was never batted
+
         tr.append(el('td', null, v == null ? (g.state === 'final' ? 'X' : '·') : v));
       });
       [R, H, E].forEach(v => tr.append(el('td', 'tot', v ?? 0)));
@@ -635,7 +572,6 @@
     return wrap;
   }
 
-  // the boxscore keys players as "ID660271"; fall back to a scan just in case
   const findPlayer = (tb, id) =>
     tb.players?.['ID' + id] ||
     Object.values(tb.players || {}).find(pl => pl.person?.id === id);
@@ -657,7 +593,7 @@
       const pl = findPlayer(tb, id);
       if (!pl) return;
       const st = batting ? (pl.stats?.batting || {}) : (pl.stats?.pitching || {});
-      // battingOrder "300" is a starter, "301" came in for him
+
       const starter = batting ? /00$/.test(pl.battingOrder || '00') : true;
       const tr = el('tr', starter ? null : 'sub');
       tr.append(el('td', 'pos', pl.position?.abbreviation || ''));
@@ -677,8 +613,7 @@
 
   function renderSheet(g, box, err) {
     const keepScroll = sheetBody.scrollTop;
-    // observable identity: check document.querySelector('#detail').dataset.pk
-    // against the card you clicked if the sheet ever shows the wrong game
+
     dlg.dataset.pk = g.pk;
 
     document.getElementById('sheet-title').textContent =
@@ -691,7 +626,7 @@
     else bits.push(clockTime(g.startsAt));
     if (g.isDoubleHeader) bits.push(`Game ${g.gameNumber}`);
     if (g.state !== 'preview') bits.push(`${g.awayRuns ?? 0}\u2013${g.homeRuns ?? 0}`);
-    // U+2022, so the ss04 alternate bullet is actually exercised
+
     document.getElementById('sheet-sub').textContent = bits.join('   \u2022   ');
 
     sheetBody.innerHTML = '';
@@ -718,8 +653,6 @@
     sheetBody.scrollTop = keepScroll;
   }
 
-  // Opening is the only path allowed to set openPk or call showModal. It is
-  // reached from a card click and nowhere else.
   async function openSheet(g) {
     openPk = g.pk;
     openedFrom = g.pk;
@@ -727,8 +660,6 @@
     if (!dlg.open) dlg.showModal();
   }
 
-  // Refresh path. Updates content in place; cannot open, cannot change which
-  // game is displayed, and bails if the identity doesn't match what's open.
   async function syncSheet(g) {
     if (!dlg.open || g.pk !== openPk) return;
     await fillSheet(g);
@@ -745,18 +676,14 @@
     }
   }
 
-  // ---------- order the board ----------
   const RANK = { live: 0, alert: 1, preview: 2, final: 3 };
-  // Every term is coerced to a finite number. A single unparseable gameDate
-  // returning NaN would otherwise make the comparator inconsistent and the
-  // resulting order arbitrary.
+
   const startMs = g => { const n = Date.parse(g.startsAt); return Number.isFinite(n) ? n : 0; };
   const order = (a, b) =>
     (RANK[a.state] ?? 9) - (RANK[b.state] ?? 9) ||
     startMs(a) - startMs(b) ||
     (a.gameNumber || 1) - (b.gameNumber || 1);
 
-  // ---------- fetch + paint ----------
   async function refresh() {
     const today = etDate(0), yesterday = etDate(-1);
     const url = `${API}?sportId=1&startDate=${yesterday}&endDate=${today}` +
@@ -767,8 +694,6 @@
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
 
-      // Keep today's games, plus anything from yesterday still unresolved —
-      // that's the 1am, still-in-the-14th case.
       const keep = [];
       (data.dates || []).forEach(d => {
         (d.games || []).forEach(gm => {
@@ -794,8 +719,6 @@
     document.getElementById('m-live').textContent = games.filter(g => g.state === 'live').length;
     document.getElementById('m-updated').textContent = 'updated ' + clockTime(new Date().toISOString());
 
-    // an open sheet tracks the same 15s refresh as the board behind it, but
-    // only ever as an in-place update of the game already showing
     if (openPk) {
       const fresh = games.find(x => x.pk === openPk);
       if (fresh) syncSheet(fresh);
@@ -826,7 +749,6 @@
     document.getElementById('m-updated').textContent = 'stalled';
   }
 
-  // ---------- lifecycle: don't poll a tab nobody's looking at ----------
   function start() {
     stop();
     refresh();
